@@ -39,7 +39,12 @@ let mushafPage = 106;
   sb.addEventListener('click', () => { S.settings.fire = !S.settings.fire; fireSound(S.settings.fire); store.save(); syncSound(); if (currentView === 'settings') viewSettings(); });
   setupPlayerBar();
   route();
-  if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
+  if ('serviceWorker' in navigator && location.protocol === 'https:') {
+    navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then(r => r.update()).catch(() => {});
+    // when a new version takes over, reload once so you see it straight away
+    let reloaded = false;
+    navigator.serviceWorker.addEventListener('controllerchange', () => { if (!reloaded && navigator.serviceWorker.controller) { reloaded = true; location.reload(); } });
+  }
   document.addEventListener('visibilitychange', () => { if (!document.hidden && currentView === 'today') route(); });
 })();
 

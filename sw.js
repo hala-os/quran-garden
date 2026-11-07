@@ -1,11 +1,11 @@
 // Keeps Bustan working offline: the app itself, plus mushaf pages, fonts and tafsir you've opened.
-const APP = 'bustan-app-v4';
+const APP = 'bustan-app-v5';
 const DATA = 'bustan-data-v1';
 const SHELL = ['./', 'index.html', 'css/app.css', 'js/main.js', 'js/store.js', 'js/planner.js', 'js/data.js',
   'js/mushaf.js', 'js/player.js', 'js/scene.js', 'data/meta.json', 'manifest.webmanifest', 'icons/icon.svg'];
 
 self.addEventListener('install', e => {
-  e.waitUntil(caches.open(APP).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));
+  e.waitUntil(caches.open(APP).then(c => c.addAll(SHELL.map(u => new Request(u, { cache: 'reload' })))).then(() => self.skipWaiting()));
 });
 self.addEventListener('activate', e => {
   e.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(k => k !== APP && k !== DATA).map(k => caches.delete(k)))).then(() => self.clients.claim()));
@@ -30,7 +30,8 @@ self.addEventListener('fetch', e => {
   }
   if (url.origin === location.origin) {
     // network first for the app, so updates arrive; fall back to the saved copy offline
-    e.respondWith(fetch(e.request).then(res => {
+    // always ask the server for the newest copy (skips the browser's 10-minute cache)
+    e.respondWith(fetch(e.request, { cache: 'no-cache' }).then(res => {
       const copy = res.clone();
       caches.open(APP).then(c => c.put(e.request, copy));
       return res;
