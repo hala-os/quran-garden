@@ -195,7 +195,10 @@ export class Player {
   }
 
   onState(cb) { this._stateCb = cb; }
-  _emitState() { this._stateCb?.(this.playing, this.session); this.session?.onState?.(this.playing); }
+  _emitState() {
+    if ('mediaSession' in navigator) navigator.mediaSession.playbackState = this.session ? (this.playing ? 'playing' : 'paused') : 'none';
+    this._stateCb?.(this.playing, this.session); this.session?.onState?.(this.playing);
+  }
   _fail(what) {
     const ss = this.session;
     if (!ss) return;

@@ -8,6 +8,7 @@ import { renderPage, highlight, fit } from './mushaf.js';
 import { Player, RECITERS } from './player.js';
 import { applyTheme, startRain, fireSound } from './scene.js';
 import { viewGarden, windowLevel } from './garden.js';
+import { popOut, closePopout, refreshPopout, canPopOut } from './popout.js';
 
 const $ = (s, r = document) => r.querySelector(s);
 const h = (html) => { const t = document.createElement('template'); t.innerHTML = html.trim(); return t.content.firstElementChild; };
@@ -405,12 +406,15 @@ function setupPlayerBar() {
     if (a === 'next') player.skip(1);
     if (a === 'prev') player.skip(-1);
     if (a === 'stop') player.stop();
+    if (a === 'pop') openPopout();
   });
+  if (!canPopOut()) $('[data-act=pop]').hidden = true;
   player.onState((playing, ss) => {
     bar.hidden = !ss;
     document.body.classList.toggle('has-player', !!ss);
     $('#pbToggle').innerHTML = playing ? '<svg viewBox="0 0 24 24"><rect x="7" y="6" width="3.5" height="12" rx="1"/><rect x="13.5" y="6" width="3.5" height="12" rx="1"/></svg>' : '<svg viewBox="0 0 24 24"><path d="M8 5.5v13l11-6.5z"/></svg>';
-    if (!ss) refreshHighlights();
+    if (!ss) { refreshHighlights(); closePopout(); }
+    else refreshPopout($('#pbTitle').textContent, $('#pbSub').textContent, playing);
   });
 }
 function updateBar(v, label) {
@@ -419,6 +423,17 @@ function updateBar(v, label) {
   const rep = ss.ayahRepeat > 1 ? ` · ayah ×${ss.ayahRepeat}` : '';
   const round = ss.rangeRepeat === 0 ? ` · round ${ss.round + 1}` : ss.rangeRepeat > 1 ? ` · round ${ss.round + 1} of ${ss.rangeRepeat}` : '';
   $('#pbSub').textContent = `${label || ''}${round}${rep} · ${ss.rec.en}`;
+  refreshPopout($('#pbTitle').textContent, $('#pbSub').textContent, player.playing);
+  // the phone's notification and lock screen show the ayah too
+  try { if ('mediaSession' in navigator) navigator.mediaSession.metadata = new MediaMetadata({ title: $('#pbTitle').textContent, artist: ss.rec.name, album: 'Bustan', artwork: [{ src: 'icons/icon-512.png', sizes: '512x512', type: 'image/png' }] }); } catch (e) { /* fine */ }
+}
+async function openPopout() {
+  try {
+    await popOut({ toggle: () => player.toggle(), next: () => player.skip(1), prev: () => player.skip(-1), stop: () => player.stop() });
+    refreshPopout($('#pbTitle').textContent, $('#pbSub').textContent, player.playing);
+  } catch (e) {
+    toast("This browser can't float the player. The pause and skip buttons are in your notifications and lock screen instead.", 5000);
+  }
 }
 
 // ---------- sheets ----------
