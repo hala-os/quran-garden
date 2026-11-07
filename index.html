@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en" data-mode="night">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Bustan</title>
+  <meta name="description" content="A cozy place to memorize and review the Quran.">
+  <meta name="theme-color" content="#1b2330">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=Nunito:wght@400;600;700&family=Noto+Naskh+Arabic:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+  <div id="app">
+    <header class="scene" id="scene" aria-hidden="true">
+      <svg class="scene-art" viewBox="0 0 800 300" preserveAspectRatio="xMidYMax slice">
+        <defs>
+          <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" class="sky-top"/><stop offset="1" class="sky-bottom"/>
+          </linearGradient>
+          <radialGradient id="lampglow" cx="0.5" cy="0.5" r="0.5">
+            <stop offset="0" stop-color="#ffd58a" stop-opacity=".75"/>
+            <stop offset=".45" stop-color="#ffb35c" stop-opacity=".22"/>
+            <stop offset="1" stop-color="#ffb35c" stop-opacity="0"/>
+          </radialGradient>
+          <clipPath id="glass"><rect x="150" y="26" width="420" height="214" rx="10"/></clipPath>
+        </defs>
+        <rect class="wall" width="800" height="300"/>
+        <!-- window -->
+        <g clip-path="url(#glass)">
+          <rect x="150" y="26" width="420" height="214" fill="url(#sky)"/>
+          <circle class="moon" cx="490" cy="70" r="16"/>
+          <g class="hills">
+            <path d="M150 200 Q240 168 330 190 T520 182 T600 196 V240 H150Z" class="hill-back"/>
+            <path d="M150 220 Q260 196 360 214 T570 206 V240 H150Z" class="hill-front"/>
+          </g>
+          <g class="garden-outside">
+            <path d="M200 236 q-4 -26 2 -40 M202 214 q-14 -6 -18 -16 M203 206 q12 -4 16 -14" class="stem"/>
+            <circle cx="219" cy="192" r="5" class="bloom b1"/><circle cx="184" cy="198" r="4" class="bloom b2"/>
+            <path d="M300 238 q2 -30 -2 -46 M299 210 q12 -8 14 -18" class="stem"/>
+            <circle cx="313" cy="192" r="6" class="bloom b3"/>
+            <path d="M420 238 q-2 -22 4 -34 M423 214 q-12 -4 -16 -12" class="stem"/>
+            <circle cx="407" cy="202" r="4" class="bloom b1"/><circle cx="427" cy="203" r="5" class="bloom b2"/>
+            <path d="M510 238 q3 -28 -1 -44" class="stem"/><circle cx="509" cy="194" r="5.5" class="bloom b3"/>
+          </g>
+          <g class="fireflies">
+            <circle cx="240" cy="170" r="2.2"/><circle cx="350" cy="150" r="1.8"/><circle cx="460" cy="168" r="2.4"/>
+            <circle cx="530" cy="140" r="1.6"/><circle cx="280" cy="130" r="1.6"/>
+          </g>
+        </g>
+        <!-- frame -->
+        <rect x="150" y="26" width="420" height="214" rx="10" class="frame"/>
+        <line x1="360" y1="26" x2="360" y2="240" class="mullion"/>
+        <line x1="150" y1="133" x2="570" y2="133" class="mullion"/>
+        <rect x="136" y="236" width="448" height="12" rx="4" class="sill"/>
+        <!-- desk -->
+        <rect x="0" y="262" width="800" height="38" class="desk"/>
+        <!-- lamp -->
+        <circle cx="690" cy="168" r="150" fill="url(#lampglow)" class="glow"/>
+        <path d="M650 262 h80 l-8 -10 h-64z" class="lamp-base"/>
+        <path d="M688 252 q-4 -50 26 -82" class="lamp-arm"/>
+        <path d="M680 168 l60 -10 l-10 -34 q-26 -8 -46 10z" class="lamp-shade"/>
+        <!-- mushaf on stand -->
+        <path d="M60 262 l40 -36 l40 36" class="stand"/>
+        <path d="M58 236 q42 -14 42 -10 q0 -4 42 10 l-4 -30 q-38 -12 -38 -8 q0 -4 -38 8z" class="book"/>
+        <!-- tea -->
+        <g class="tea">
+          <path d="M590 238 h40 v14 q0 10 -20 10 q-20 0 -20 -10z" class="cup"/>
+          <path d="M630 242 q10 0 10 7 q0 7 -10 7" class="handle"/>
+          <path d="M602 230 q-6 -8 0 -16 q6 -8 0 -16" class="steam s1"/>
+          <path d="M616 230 q-6 -8 0 -16 q6 -8 0 -16" class="steam s2"/>
+        </g>
+      </svg>
+      <canvas class="rain" id="rain"></canvas>
+    </header>
+
+    <main id="view" tabindex="-1"></main>
+
+    <div id="playerbar" class="playerbar" hidden>
+      <div class="pb-info"><div class="pb-title" id="pbTitle"></div><div class="pb-sub" id="pbSub"></div></div>
+      <div class="pb-ctrls">
+        <button class="icon-btn" data-act="next" aria-label="Next ayah"><svg viewBox="0 0 24 24"><path d="M15 6 9 12l6 6"/></svg></button>
+        <button class="icon-btn big" data-act="toggle" aria-label="Play or pause" id="pbToggle"></button>
+        <button class="icon-btn" data-act="prev" aria-label="Previous ayah"><svg viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/></svg></button>
+        <button class="icon-btn" data-act="stop" aria-label="Stop"><svg viewBox="0 0 24 24"><rect x="7" y="7" width="10" height="10" rx="2"/></svg></button>
+      </div>
+    </div>
+
+    <nav class="tabs" id="tabs">
+      <a href="#/today" data-tab="today"><svg viewBox="0 0 24 24"><path d="M12 21c-4-3-7-6-7-10a7 7 0 0 1 14 0c0 4-3 7-7 10Z"/><path d="M12 11v10M12 14c-2-1-3-2.5-3-4.5M12 15c2-1 3-2.5 3-4.5"/></svg><span>Today</span></a>
+      <a href="#/mushaf" data-tab="mushaf"><svg viewBox="0 0 24 24"><path d="M3 5c3-1 6-1 9 1 3-2 6-2 9-1v14c-3-1-6-1-9 1-3-2-6-2-9-1Z"/><path d="M12 6v14"/></svg><span>Mushaf</span></a>
+      <a href="#/settings" data-tab="settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg><span>Settings</span></a>
+    </nav>
+  </div>
+
+  <div class="sheet-backdrop" id="backdrop" hidden></div>
+  <section class="sheet" id="sheet" role="dialog" aria-modal="true" hidden></section>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>

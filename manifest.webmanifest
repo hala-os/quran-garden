@@ -1,0 +1,15 @@
+{
+  "name": "Bustan · بستان",
+  "short_name": "Bustan",
+  "description": "A cozy place to memorize and review the Quran.",
+  "start_url": "./#/today",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#1b2330",
+  "theme_color": "#1b2330",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
