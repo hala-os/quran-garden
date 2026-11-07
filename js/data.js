@@ -61,9 +61,24 @@ export const cmpVerse = (x, y) => x[0] - y[0] || x[1] - y[1];
 
 // All verses touching pages p1..p2, optionally with one bridge ayah on each side.
 export function versesForPages(p1, p2, bridge = true) {
-  const a = pageRange(p1).from, b = pageRange(p2).to;
+  let a = pageRange(p1).from, b = pageRange(p2).to;
+  // Start and end on the surah itself: if a surah begins on the first page, start there
+  // (dropping the end of the previous surah), and if a surah ends on the last page, stop there.
+  const firstEnd = pageRange(p1).to, lastStart = pageRange(p2).from;
+  for (let v = nextVerse(a); v && cmpVerse(v, firstEnd) <= 0; v = nextVerse(v)) {
+    if (v[1] === 1) { a = v; break; }
+  }
+  let cut = null;
+  for (let v = cmpVerse(lastStart, a) > 0 ? lastStart : a; v && cmpVerse(v, b) <= 0; v = nextVerse(v)) {
+    if (v[1] === surah(v[0]).verses) cut = v;
+  }
+  if (cut) b = cut;
   let start = a, end = b;
-  if (bridge) { start = prevVerse(a) || a; end = nextVerse(b) || b; }
+  if (bridge) {
+    // One ayah before and after keeps pages connected, but never across a surah boundary.
+    if (a[1] !== 1) start = prevVerse(a) || a;
+    if (b[1] !== surah(b[0]).verses) end = nextVerse(b) || b;
+  }
   const out = [];
   for (let v = start; v && cmpVerse(v, end) <= 0; v = nextVerse(v)) out.push(v);
   return out;
