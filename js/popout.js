@@ -10,8 +10,9 @@ export const canPopOut = () => 'documentPictureInPicture' in window || !!documen
 export async function popOut(act) {
   actions = act;
   if (pip) { closePopout(); return; }
-  if ('documentPictureInPicture' in window) return openDoc();
+  // The video window has no address bar and scales cleanly to any size, so it's used everywhere.
   if (document.pictureInPictureEnabled) return openVideo();
+  if ('documentPictureInPicture' in window) return openDoc();
   throw new Error('unsupported');
 }
 
@@ -82,7 +83,7 @@ function paintDoc() {
 // ---------- phone: a floating video window ----------
 async function openVideo() {
   const canvas = document.createElement('canvas');
-  canvas.width = 640; canvas.height = 360;
+  canvas.width = 640; canvas.height = 300;
   const ctx = canvas.getContext('2d');
   const video = document.createElement('video');
   video.muted = true; video.playsInline = true;
@@ -108,7 +109,7 @@ function paintCanvas() {
   ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
   // little fairy lights along the top
   for (let i = 0; i < 9; i++) {
-    const x = 40 + i * 70, y = 26 + Math.sin(i * 1.3) * 8;
+    const x = 40 + i * 70, y = 22 + Math.sin(i * 1.3) * 8;
     ctx.fillStyle = i % 2 ? '#ffd98f' : '#f3a6b5';
     ctx.globalAlpha = .55 + .45 * Math.abs(Math.sin(Date.now() / 900 + i));
     ctx.beginPath(); ctx.arc(x, y, 6, 0, Math.PI * 2); ctx.fill();
@@ -116,10 +117,12 @@ function paintCanvas() {
   ctx.globalAlpha = 1;
   ctx.textAlign = 'center'; ctx.direction = 'rtl';
   ctx.fillStyle = c('--ink', '#f4e6d4');
-  ctx.font = "600 62px 'Noto Naskh Arabic', serif";
-  ctx.fillText(last.title || 'Bustan', W / 2, H / 2 + 14, W - 60);
+  // big and simple, so it still reads when the window is shrunk small
+  ctx.font = "600 76px 'Noto Naskh Arabic', serif";
+  ctx.fillText(last.title || 'Bustan', W / 2, H / 2 + 22, W - 50);
   ctx.direction = 'ltr';
-  ctx.fillStyle = c('--soft', '#a99380');
-  ctx.font = "600 26px Nunito, system-ui, sans-serif";
-  ctx.fillText((last.playing ? '' : 'Paused · ') + (last.sub || ''), W / 2, H / 2 + 76, W - 60);
+  ctx.fillStyle = last.playing ? c('--soft', '#a99380') : c('--accent', '#eba96a');
+  ctx.font = "700 30px Nunito, system-ui, sans-serif";
+  const sub = (last.sub || '').split(' · ').slice(0, 2).join(' · ');
+  ctx.fillText(last.playing ? sub : 'Paused', W / 2, H / 2 + 92, W - 50);
 }
