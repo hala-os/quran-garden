@@ -7,6 +7,7 @@ import {
 import { renderPage, highlight, fit } from './mushaf.js';
 import { Player, RECITERS } from './player.js';
 import { applyTheme, startRain, fireSound } from './scene.js';
+import { viewGarden, windowLevel } from './garden.js';
 
 const $ = (s, r = document) => r.querySelector(s);
 const h = (html) => { const t = document.createElement('template'); t.innerHTML = html.trim(); return t.content.firstElementChild; };
@@ -57,10 +58,19 @@ function route() {
   closeSheet();
   if (view === 'mushaf') { if (arg) mushafPage = clampPage(+arg); viewMushaf(); }
   else if (view === 'settings') viewSettings();
+  else if (view === 'garden') showGarden();
   else viewToday();
+  growWindow();
   $('#view').focus({ preventScroll: true });
 }
 const clampPage = (p) => Math.max(1, Math.min(604, p || 1));
+
+// ---------- Garden ----------
+function showGarden() {
+  viewGarden($('#view'), { S, h, openSheet, closeSheet, toast, openMushafLoop, openWakeSheet, store, planner });
+}
+// the little flowers in the window grow with the garden
+function growWindow() { $('#scene').dataset.g = windowLevel(S); }
 
 // ---------- Today ----------
 const REASONS = {
@@ -81,6 +91,7 @@ function greeting() {
 }
 
 function viewToday() {
+  growWindow();
   const today = todayStr();
   const plan = planner.todayPlan(S, today);
   store.save();
@@ -195,8 +206,9 @@ function reviewCard(p, rating) {
   return el;
 }
 
-function openWakeSheet() {
-  const seeds = Object.entries(S.pages).filter(([, i]) => i.status === 'seed').map(([p]) => +p).sort((a, b) => a - b);
+function openWakeSheet(only) {
+  const seeds = Object.entries(S.pages).filter(([, i]) => i.status === 'seed').map(([p]) => +p)
+    .filter(p => typeof only !== 'number' || pageRange(p).from[0] === only).sort((a, b) => a - b);
   if (!seeds.length) { toast('No sleeping seeds right now.'); return; }
   // group by surah of first verse
   const groups = new Map();
@@ -210,11 +222,11 @@ function openWakeSheet() {
     <div class="seed-groups"></div></div>`);
   const wrap = body.querySelector('.seed-groups');
   for (const [s, ps] of groups) {
-    const g = h(`<details><summary>${surah(s).ar} <span class="soft">· ${ps.length} pages</span></summary><div class="seed-pages"></div></details>`);
+    const g = h(`<details ${groups.size === 1 ? 'open' : ''}><summary>${surah(s).ar} <span class="soft">· ${ps.length} pages</span></summary><div class="seed-pages"></div></details>`);
     ps.forEach(p => {
       const b = h(`<button class="chip">${p}</button>`);
       b.title = pageLabel(p);
-      b.onclick = () => { planner.wakeSeed(S, p); store.save(); closeSheet(); toast('Good morning, little seed 🌱'); viewToday(); };
+      b.onclick = () => { planner.wakeSeed(S, p); store.save(); closeSheet(); toast('Good morning, little seed 🌱'); route(); };
       g.querySelector('.seed-pages').append(b);
     });
     wrap.append(g);
