@@ -77,11 +77,15 @@ svg.i { width: 18px; height: 18px; vertical-align: -3px; }
 
 /* ---------- scene ---------- */
 .scene { position: relative; height: clamp(170px, 26vh, 300px); overflow: hidden; background: var(--wall); transition: height .4s; }
-body[data-view="mushaf"] .scene, body[data-view="settings"] .scene { height: 96px; }
+body[data-view="mushaf"] .scene { height: 58px; }
+body[data-view="settings"] .scene { height: 96px; }
+body[data-view="mushaf"] #view { padding-top: 10px; }
+.mushaf-view > .soft.center { display: none; }
 .scene::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 12.7%; background: var(--desk); box-shadow: inset 0 3px 0 var(--desk2); }
 .sound-btn { position: absolute; z-index: 3; top: 10px; right: 12px; width: 40px; height: 40px; border-radius: 50%; border: 1px solid color-mix(in srgb, var(--line) 70%, transparent); background: color-mix(in srgb, var(--card) 70%, transparent); color: var(--soft); display: grid; place-items: center; cursor: pointer; backdrop-filter: blur(6px); }
 .sound-btn[aria-pressed="true"] { color: #ffb45e; border-color: #c9773e; box-shadow: 0 0 14px rgba(255, 170, 80, .45); }
-body[data-view="mushaf"] .sound-btn, body[data-view="settings"] .sound-btn { top: 28px; width: 36px; height: 36px; }
+body[data-view="mushaf"] .sound-btn { top: 11px; width: 36px; height: 36px; }
+body[data-view="settings"] .sound-btn { top: 28px; width: 36px; height: 36px; }
 .scene-art { z-index: 1; position: absolute; inset: 0; width: 100%; height: 100%; stroke: none; }
 .scene .rain { z-index: 2; position: absolute; pointer-events: none; border-radius: 8px; }
 .wall { fill: var(--wall); }
@@ -195,7 +199,7 @@ body.has-player #view { padding-bottom: 190px; }
 .done { text-align: center; } .done p { margin: .3rem 0 0; color: var(--ink2); }
 
 /* ---------- mushaf ---------- */
-.mv-bar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; justify-content: center; margin-bottom: 14px; }
+.mv-bar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; justify-content: center; margin-bottom: 10px; }
 .mv-bar select, .mv-bar input, .settings select, .settings input[type=number], .loop-form select, .loop-form input[type=number] {
   background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 9px 10px; min-width: 0;
 }
@@ -204,27 +208,30 @@ body.has-player #view { padding-bottom: 190px; }
 .pg input { width: 76px; }
 .book-wrap { position: relative; display: flex; align-items: center; justify-content: center; gap: 8px; }
 .book { display: flex; flex-direction: row-reverse; justify-content: center; gap: 0; width: 100%; max-width: 560px; }
-.book.double { max-width: 1060px; }
+.book.double { max-width: none; }
+.book.double .mushaf-page { --h: min(calc(100dvh - 190px), calc((100vw - 150px) / 2 / 0.6), 940px); }
 .turn { flex: none; width: 40px; height: 64px; border-radius: 14px; border: 1px solid var(--line); background: var(--card); color: var(--ink2); font-size: 28px; cursor: pointer; }
 @media (max-width: 640px) { .turn { display: none; } }
 
 .mushaf-page {
-  position: relative; flex: 1; min-width: 0; aspect-ratio: 0.62; max-height: calc(100dvh - 280px); min-height: 0; max-width: 520px;
+  --h: min(calc(100dvh - 190px), calc((100vw - 32px) / 0.6), 940px);
+  position: relative; flex: none; min-height: 0; height: var(--h); width: calc(var(--h) * 0.6);
+  --w: calc(var(--h) * 0.6);
   background: radial-gradient(120% 90% at 50% 40%, var(--paper) 62%, var(--paper2)); color: var(--paper-ink);
   border-radius: 6px 14px 14px 6px; box-shadow: var(--shadow), inset 0 0 0 1px rgba(120, 90, 40, .12);
-  padding: 5.5% 7% 3.5%; display: flex; flex-direction: column; container-type: inline-size;
+  padding: calc(var(--w) * .07) calc(var(--w) * .075) calc(var(--w) * .055); display: flex; flex-direction: column; container-type: inline-size;
 }
 .book.double .mushaf-page:first-child { border-radius: 6px 14px 14px 6px; box-shadow: var(--shadow), inset 16px 0 20px -16px rgba(90, 60, 20, .38); }
 .book.double .mushaf-page:last-child { border-radius: 14px 6px 6px 14px; box-shadow: var(--shadow), inset -16px 0 20px -16px rgba(90, 60, 20, .38); }
 .book:not(.double) .mushaf-page { border-radius: 14px; }
 [data-mode="night"] .mushaf-page { filter: brightness(.93) sepia(.1); }
 .mushaf-page::before { content: ''; position: absolute; inset: 2.4%; border: 1.5px solid color-mix(in srgb, var(--paper-edge) 65%, transparent); box-shadow: inset 0 0 0 3px var(--paper), inset 0 0 0 4px color-mix(in srgb, var(--paper-edge) 35%, transparent); border-radius: 8px; pointer-events: none; }
-.mp-head { display: flex; justify-content: space-between; font-family: var(--arabic); font-size: clamp(10px, 3.2cqw, 15px); color: #7b6142; direction: rtl; padding: 0 1% 1.2%; }
-.mp-foot { text-align: center; font-family: var(--arabic); font-size: clamp(10px, 3.2cqw, 15px); color: #7b6142; padding-top: 1%; }
-.mp-body { flex: 1; display: flex; flex-direction: column; justify-content: space-between; direction: rtl; min-height: 0; cursor: pointer; }
+.mp-head { display: flex; justify-content: space-between; font-family: var(--arabic); font-size: clamp(11px, 3.6cqw, 16px); line-height: 1.3; color: #7b6142; direction: rtl; padding: 0 1cqw 1.2cqw; }
+.mp-foot { text-align: center; font-family: var(--arabic); font-size: clamp(11px, 3.6cqw, 16px); line-height: 1.2; color: #7b6142; padding-top: 1.8cqw; }
+.mp-body { flex: 1; padding-block: .25em .15em; display: flex; flex-direction: column; justify-content: space-between; direction: rtl; min-height: 0; cursor: pointer; }
 .opening .mp-body { justify-content: center; gap: 1.2em; }
 .opening .mp-body { gap: .35em; }
-.ml { display: flex; justify-content: center; align-items: center; white-space: nowrap; line-height: 1.2; column-gap: .16em; }
+.ml { display: flex; justify-content: center; align-items: center; white-space: nowrap; line-height: 1; column-gap: .16em; }
 .ml.justify { justify-content: space-between; }
 .ml-header, .ml-bism { color: #5e4122; }
 .sh-frame { display: inline-flex; justify-content: center; align-items: center; width: 100%; padding: .02em 0; border-radius: .25em;

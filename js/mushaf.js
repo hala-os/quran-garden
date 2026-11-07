@@ -101,7 +101,7 @@ export function fit(el) {
   if (!sorted.length) return;
   const opening = el.classList.contains('opening');
   const byWidth = base * (W * (opening ? 0.72 : 0.985)) / sorted[0];
-  const byHeight = H / 15 / 1.22;
+  const byHeight = H / 15 / 1.12; // these glyphs sit small in their em: print spacing is about 1.1 em per line
   const size = Math.min(byWidth, byHeight);
   body.style.fontSize = size.toFixed(2) + 'px';
   if (!opening) {
