@@ -31,7 +31,17 @@ function cleanup() {
 export function refreshPopout(title, sub, playing) {
   last = { title, sub, playing };
   if (!pip) return;
-  if (pip.kind === 'doc') paintDoc(); else paintCanvas();
+  if (pip.kind === 'doc') paintDoc(); else { paintCanvas(); syncVideo(); }
+}
+
+// Chrome's floating window shows the video's own play/pause button, so the hidden video
+// must pause and play along with the recitation, and its button must drive the recitation.
+function syncVideo() {
+  const v = pip?.video; if (!v) return;
+  clearTimeout(pip.syncT);
+  if (last.playing && v.paused) v.play().catch(() => {});
+  // give the "Paused" frame a moment to reach the window before freezing it
+  else if (!last.playing && !v.paused) pip.syncT = setTimeout(() => { if (pip?.video && !last.playing) pip.video.pause(); }, 350);
 }
 
 // ---------- computer: a real mini window ----------
@@ -98,6 +108,8 @@ async function openVideo() {
   // keep frames flowing so the window never looks frozen
   pip.timer = setInterval(() => pip && paintCanvas(), 1000);
   await video.play();
+  video.addEventListener('play', () => { if (!last.playing) actions.toggle?.(); });
+  video.addEventListener('pause', () => { if (last.playing) actions.toggle?.(); });
   video.addEventListener('leavepictureinpicture', () => { clearInterval(pip?.timer); cleanup(); }, { once: true });
   await video.requestPictureInPicture();
 }
