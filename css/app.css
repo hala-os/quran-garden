@@ -40,6 +40,19 @@
   --shadow: 0 8px 22px rgba(160, 90, 105, .14);
   color-scheme: light;
 }
+:root[data-mode="rosenight"] {
+  --bg: #2b1f27; --bg2: #33242e; --card: #3a2a34; --card2: #45333e; --line: #5e4554; --stitch: rgba(246, 222, 232, .14);
+  --ink: #f7e5ec; --ink2: #ddc3ce; --soft: #ae8f9c;
+  --accent: #e8949f; --accent-d: #b4636f; --on-accent: #2d1419;
+  --sage: #a8c09a; --sage-d: #6f8f64; --rose: #e8a3b4; --rose-d: #b5717f;
+  --hl: rgba(232, 148, 159, .38); --hl-range: rgba(168, 192, 154, .15); --hl-sel: rgba(232, 163, 180, .38);
+  --wall: #33232d; --wall2: #3d2a36; --sky1: #1c1a33; --sky2: #4b3a5e; --hill1: #2d2f42; --hill2: #252737;
+  --desk: #5a3a46; --desk2: #4a2f3a; --curtain: #c98d9c; --curtain2: #a66d7c; --frame: #6e4a59;
+  --shadow: 0 8px 22px rgba(15, 5, 10, .38);
+  color-scheme: dark;
+}
+[data-mode="rosenight"] .bloom { opacity: .7; }
+[data-mode="rosenight"] .mushaf-page { filter: brightness(.93) sepia(.08); }
 [data-mode="rose"] .moon { fill: #ffe0b8; }
 [data-mode="rose"] .lights circle { animation: none; opacity: .8; }
 [data-mode="rose"] .steam { stroke: rgba(160, 110, 120, .35); }
@@ -211,7 +224,7 @@ body.has-player #view { padding-bottom: 190px; }
 .mp-body { flex: 1; display: flex; flex-direction: column; justify-content: space-between; direction: rtl; min-height: 0; cursor: pointer; }
 .opening .mp-body { justify-content: center; gap: 1.2em; }
 .opening .mp-body { gap: .35em; }
-.ml { display: flex; justify-content: center; align-items: center; white-space: nowrap; line-height: 1.45; column-gap: .16em; }
+.ml { display: flex; justify-content: center; align-items: center; white-space: nowrap; line-height: 1.2; column-gap: .16em; }
 .ml.justify { justify-content: space-between; }
 .ml-header, .ml-bism { color: #5e4122; }
 .sh-frame { display: inline-flex; justify-content: center; align-items: center; width: 100%; padding: .02em 0; border-radius: .25em;

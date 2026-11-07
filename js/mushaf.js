@@ -87,6 +87,7 @@ export function fit(el) {
   if (!W || !H) return;
   const base = 40;
   body.style.fontSize = base + 'px';
+  body.style.paddingInline = '0px';
   const rows = [...body.children];
   rows.forEach(r => r.classList.remove('justify'));
   const widths = rows.map(r => {
@@ -100,12 +101,15 @@ export function fit(el) {
   if (!sorted.length) return;
   const opening = el.classList.contains('opening');
   const byWidth = base * (W * (opening ? 0.72 : 0.985)) / sorted[0];
-  const byHeight = H / 15 / 1.45;
+  const byHeight = H / 15 / 1.22;
   const size = Math.min(byWidth, byHeight);
   body.style.fontSize = size.toFixed(2) + 'px';
   if (!opening) {
-    const scale = size / base;
-    rows.forEach((r, i) => { if (widths[i] * scale > W * 0.55) r.classList.add('justify'); });
+    // Every text line runs edge to edge, like print. When the page is short and the text
+    // can't fill the width, narrow the text block instead of stretching the gaps.
+    const block = sorted[0] * size / base;
+    if (block < W * 0.97) body.style.paddingInline = ((W - block) / 2).toFixed(1) + 'px';
+    rows.forEach((r, i) => { if (widths[i]) r.classList.add('justify'); });
   }
 }
 

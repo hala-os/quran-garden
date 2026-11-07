@@ -1,5 +1,5 @@
 // Keeps Bustan working offline: the app itself, plus mushaf pages, fonts and tafsir you've opened.
-const APP = 'bustan-app-v3';
+const APP = 'bustan-app-v4';
 const DATA = 'bustan-data-v1';
 const SHELL = ['./', 'index.html', 'css/app.css', 'js/main.js', 'js/store.js', 'js/planner.js', 'js/data.js',
   'js/mushaf.js', 'js/player.js', 'js/scene.js', 'data/meta.json', 'manifest.webmanifest', 'icons/icon.svg'];

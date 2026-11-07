@@ -2,10 +2,12 @@
 
 export function applyTheme(setting) {
   const h = new Date().getHours();
-  const mode = setting === 'auto' ? (h >= 6 && h < 18 ? 'morning' : 'night') : setting;
+  const day = h >= 6 && h < 18;
+  if (setting === 'rose') setting = 'pink'; // older saved setting
+  const mode = setting === 'auto' ? (day ? 'morning' : 'night') : setting === 'pink' ? (day ? 'rose' : 'rosenight') : setting;
   document.documentElement.dataset.mode = mode;
   const meta = document.querySelector('meta[name=theme-color]');
-  if (meta) meta.content = { night: '#2a201c', morning: '#f4ebdd', rose: '#f8e6e6' }[mode] || '#2a201c';
+  if (meta) meta.content = { night: '#2a201c', morning: '#f4ebdd', rose: '#f8e6e6', rosenight: '#2b1f27' }[mode] || '#2a201c';
   return mode;
 }
 
