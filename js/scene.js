@@ -5,7 +5,7 @@ export function applyTheme(setting) {
   const mode = setting === 'auto' ? (h >= 6 && h < 18 ? 'morning' : 'night') : setting;
   document.documentElement.dataset.mode = mode;
   const meta = document.querySelector('meta[name=theme-color]');
-  if (meta) meta.content = mode === 'night' ? '#2a201c' : '#f4ebdd';
+  if (meta) meta.content = { night: '#2a201c', morning: '#f4ebdd', rose: '#f8e6e6' }[mode] || '#2a201c';
   return mode;
 }
 

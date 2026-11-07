@@ -539,7 +539,7 @@ function viewSettings() {
 
     <div class="card">
       <h3>Look &amp; feel</h3>
-      ${radio('theme', ['auto', 'night', 'morning'], st.theme, x => ({ auto: 'Follow the time', night: 'Rainy night', morning: 'Soft morning' }[x]))}
+      ${radio('theme', ['auto', 'night', 'morning', 'rose'], st.theme, x => ({ auto: 'Follow the time', night: 'Cozy night', morning: 'Soft morning', rose: 'Pink' }[x]))}
       ${radio('spread', ['auto', 'single', 'double'], st.spread, x => ({ auto: 'Auto pages', single: 'One page', double: 'Two pages' }[x]))}
       <label class="check"><input type="checkbox" name="fire" ${st.fire ? 'checked' : ''}> Crackling fire sound</label>
     </div>
