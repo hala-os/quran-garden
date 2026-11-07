@@ -42,8 +42,8 @@ let mushafPage = 106;
   if ('serviceWorker' in navigator && location.protocol === 'https:') {
     navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then(r => r.update()).catch(() => {});
     // when a new version takes over, reload once so you see it straight away
-    let reloaded = false;
-    navigator.serviceWorker.addEventListener('controllerchange', () => { if (!reloaded && navigator.serviceWorker.controller) { reloaded = true; location.reload(); } });
+    let reloaded = false; const hadOld = !!navigator.serviceWorker.controller;
+    navigator.serviceWorker.addEventListener('controllerchange', () => { if (hadOld && !reloaded) { reloaded = true; location.reload(); } });
   }
   document.addEventListener('visibilitychange', () => { if (!document.hidden && currentView === 'today') route(); });
 })();
