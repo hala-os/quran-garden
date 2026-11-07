@@ -49,13 +49,15 @@ async function openDoc() {
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;800&family=Noto+Naskh+Arabic:wght@600&display=swap" rel="stylesheet">
   <style>
     :root { ${vars()} }
-    html, body { margin: 0; height: 100%; }
-    body { background: var(--card); color: var(--ink); font-family: Nunito, system-ui, sans-serif; display: flex; flex-direction: column; justify-content: center; gap: 12px; padding: 14px 16px; box-sizing: border-box; }
+    html, body { margin: 0; height: 100%; overflow: hidden; }
+    body { background: var(--card); color: var(--ink); font-family: Nunito, system-ui, sans-serif; display: flex; flex-direction: column; justify-content: center; gap: 4vh; padding: 3vh 4vw; box-sizing: border-box; }
+    @media (max-height: 150px) { .t, .s { display: none; } }
+    @media (max-height: 210px) { .s { display: none; } }
     .t { font-family: 'Noto Naskh Arabic', serif; font-size: 1.35rem; direction: rtl; text-align: center; line-height: 1.4; }
     .s { color: var(--soft); font-size: .82rem; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .c { display: flex; justify-content: center; gap: 10px; }
-    button { width: 42px; height: 42px; border-radius: 50%; border: 1px solid var(--line); background: var(--card2); color: var(--ink); cursor: pointer; display: grid; place-items: center; padding: 0; }
-    button.big { width: 52px; height: 52px; background: var(--accent); color: var(--on-accent); border: 0; }
+    .c { display: flex; justify-content: center; align-items: center; gap: min(10px, 3vw); }
+    button { width: min(42px, 40vh, 18vw); height: min(42px, 40vh, 18vw); border-radius: 50%; border: 1px solid var(--line); background: var(--card2); color: var(--ink); cursor: pointer; display: grid; place-items: center; padding: 0; }
+    button.big { width: min(52px, 52vh, 22vw); height: min(52px, 52vh, 22vw); background: var(--accent); color: var(--on-accent); border: 0; }
     svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
     .fill { fill: currentColor; stroke: none; }
   </style>`;
