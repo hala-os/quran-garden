@@ -11,7 +11,7 @@ A cozy, personal place to memorize and review the Quran: a rainy-night study noo
 - **Settings:** daily time, new-page days, reciter, theme, rain sound, which pages are memorized or sleeping seeds, and backups.
 
 ## Sources
-- Mushaf text and layout: [quran-qcf4](https://github.com/MohamadHajjRabee/quran-qcf4) (QCF4, King Fahd Complex, 1441 AH). Fonts load from jsDelivr and are not re-hosted here.
+- Mushaf layout: the classic Madinah mushaf, line for line, from [mushaf-layout](https://github.com/zonetecde/mushaf-layout), rendered with the King Fahd Complex QPC V2 page fonts. Surah headers and basmala use the QCF4 ornament font from [quran-qcf4](https://github.com/MohamadHajjRabee/quran-qcf4). Fonts and layouts load from CDNs and are not re-hosted here.
 - Tafsir As-Sa'di: [spa5k/tafsir_api](https://github.com/spa5k/tafsir_api)
 - Recitations: Abdur-Rashid Sufi and Ahmed bin Taleb from [mp3quran.net](https://mp3quran.net) (with per-ayah timings), Abu Bakr Ash-Shatiri from [everyayah.com](https://everyayah.com)
 

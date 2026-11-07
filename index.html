@@ -5,74 +5,91 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Bustan</title>
   <meta name="description" content="A cozy place to memorize and review the Quran.">
-  <meta name="theme-color" content="#1b2330">
+  <meta name="theme-color" content="#2a201c">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=Nunito:wght@400;600;700&family=Noto+Naskh+Arabic:wght@400;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Young+Serif&family=Caveat:wght@500;700&family=Nunito:wght@400;600;700;800&family=Noto+Naskh+Arabic:wght@400;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/app.css">
 </head>
 <body>
   <div id="app">
-    <header class="scene" id="scene" aria-hidden="true">
-      <svg class="scene-art" viewBox="0 0 800 300" preserveAspectRatio="xMidYMax slice">
+    <header class="scene" id="scene">
+      <button class="sound-btn" id="soundBtn" aria-label="Crackling fire sound" aria-pressed="false" title="Crackling fire sound"><svg viewBox="0 0 24 24"><path d="M12 21c-3.9 0-6.5-2.6-6.5-6.1 0-3.3 2.4-5.1 3.6-7.9.4 1.9 1.3 3 2.4 3.6-.2-3 .9-5.4 3-7.1-.3 2.9 1 4.6 2.3 6.3 1 1.3 1.7 2.8 1.7 5.1 0 3.5-2.6 6.1-6.5 6.1Z"/><path d="M12 21c-1.6 0-2.8-1.1-2.8-2.7 0-1.8 1.6-2.6 2.2-4.3 1.6 1.2 3.4 2.4 3.4 4.3 0 1.6-1.2 2.7-2.8 2.7Z"/></svg></button>
+      <svg class="scene-art" aria-hidden="true" viewBox="0 0 800 300" preserveAspectRatio="xMidYMax slice">
         <defs>
           <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
             <stop offset="0" class="sky-top"/><stop offset="1" class="sky-bottom"/>
           </linearGradient>
           <radialGradient id="lampglow" cx="0.5" cy="0.5" r="0.5">
-            <stop offset="0" stop-color="#ffd58a" stop-opacity=".75"/>
-            <stop offset=".45" stop-color="#ffb35c" stop-opacity=".22"/>
-            <stop offset="1" stop-color="#ffb35c" stop-opacity="0"/>
+            <stop offset="0" stop-color="#ffcf8a" stop-opacity=".6"/>
+            <stop offset=".5" stop-color="#ffb066" stop-opacity=".16"/>
+            <stop offset="1" stop-color="#ffb066" stop-opacity="0"/>
           </radialGradient>
-          <clipPath id="glass"><rect x="150" y="26" width="420" height="214" rx="10"/></clipPath>
+          <pattern id="dots" width="26" height="26" patternUnits="userSpaceOnUse"><circle cx="6" cy="6" r="2.2" class="wp"/><circle cx="19" cy="19" r="1.6" class="wp"/></pattern>
+          <clipPath id="glass"><rect x="190" y="40" width="380" height="196" rx="10"/></clipPath>
         </defs>
         <rect class="wall" width="800" height="300"/>
-        <!-- window -->
+        <rect width="800" height="300" fill="url(#dots)" class="wallpaper"/>
+        <!-- window view -->
         <g clip-path="url(#glass)">
-          <rect x="150" y="26" width="420" height="214" fill="url(#sky)"/>
-          <circle class="moon" cx="490" cy="70" r="16"/>
-          <g class="hills">
-            <path d="M150 200 Q240 168 330 190 T520 182 T600 196 V240 H150Z" class="hill-back"/>
-            <path d="M150 220 Q260 196 360 214 T570 206 V240 H150Z" class="hill-front"/>
-          </g>
-          <g class="garden-outside">
-            <path d="M200 236 q-4 -26 2 -40 M202 214 q-14 -6 -18 -16 M203 206 q12 -4 16 -14" class="stem"/>
-            <circle cx="219" cy="192" r="5" class="bloom b1"/><circle cx="184" cy="198" r="4" class="bloom b2"/>
-            <path d="M300 238 q2 -30 -2 -46 M299 210 q12 -8 14 -18" class="stem"/>
-            <circle cx="313" cy="192" r="6" class="bloom b3"/>
-            <path d="M420 238 q-2 -22 4 -34 M423 214 q-12 -4 -16 -12" class="stem"/>
-            <circle cx="407" cy="202" r="4" class="bloom b1"/><circle cx="427" cy="203" r="5" class="bloom b2"/>
-            <path d="M510 238 q3 -28 -1 -44" class="stem"/><circle cx="509" cy="194" r="5.5" class="bloom b3"/>
-          </g>
-          <g class="fireflies">
-            <circle cx="240" cy="170" r="2.2"/><circle cx="350" cy="150" r="1.8"/><circle cx="460" cy="168" r="2.4"/>
-            <circle cx="530" cy="140" r="1.6"/><circle cx="280" cy="130" r="1.6"/>
-          </g>
+          <rect x="190" y="40" width="380" height="196" fill="url(#sky)"/>
+          <circle class="moon" cx="500" cy="84" r="15"/>
+          <path d="M190 196 Q280 166 370 186 T560 178 T600 192 V240 H190Z" class="hill-back"/>
+          <path d="M190 216 Q300 192 400 210 T600 202 V240 H190Z" class="hill-front"/>
+          <path d="M240 234 q-4 -26 2 -40 M242 212 q-14 -6 -18 -16 M243 204 q12 -4 16 -14" class="stem"/>
+          <circle cx="259" cy="190" r="5" class="bloom b1"/><circle cx="224" cy="196" r="4" class="bloom b2"/>
+          <path d="M330 236 q2 -30 -2 -46 M329 208 q12 -8 14 -18" class="stem"/><circle cx="343" cy="190" r="6" class="bloom b3"/>
+          <path d="M440 236 q-2 -22 4 -34 M443 212 q-12 -4 -16 -12" class="stem"/>
+          <circle cx="427" cy="200" r="4" class="bloom b1"/><circle cx="447" cy="201" r="5" class="bloom b2"/>
+          <path d="M520 236 q3 -28 -1 -44" class="stem"/><circle cx="519" cy="192" r="5.5" class="bloom b3"/>
+          <g class="fireflies"><circle cx="270" cy="168" r="2.2"/><circle cx="370" cy="150" r="1.8"/><circle cx="470" cy="166" r="2.4"/><circle cx="535" cy="140" r="1.6"/><circle cx="300" cy="128" r="1.6"/></g>
         </g>
-        <!-- frame -->
-        <rect x="150" y="26" width="420" height="214" rx="10" class="frame"/>
-        <line x1="360" y1="26" x2="360" y2="240" class="mullion"/>
-        <line x1="150" y1="133" x2="570" y2="133" class="mullion"/>
-        <rect x="136" y="236" width="448" height="12" rx="4" class="sill"/>
+        <rect x="190" y="40" width="380" height="196" rx="10" class="frame"/>
+        <line x1="380" y1="40" x2="380" y2="236" class="mullion"/>
+        <line x1="190" y1="138" x2="570" y2="138" class="mullion"/>
+        <rect x="176" y="232" width="408" height="12" rx="4" class="sill"/>
+        <!-- curtains + rod -->
+        <line x1="150" y1="30" x2="610" y2="30" class="rod"/>
+        <path d="M156 30 h58 q-6 60 -20 104 q-10 34 8 100 h-46 q-8 -110 0 -204z" class="curtain"/>
+        <path d="M172 40 q4 60 -2 120 M190 40 q6 50 -4 96" class="curtain-fold"/>
+        <rect x="160" y="134" width="44" height="8" rx="4" class="tie"/>
+        <path d="M604 30 h-58 q6 60 20 104 q10 34 -8 100 h46 q8 -110 0 -204z" class="curtain"/>
+        <path d="M588 40 q-4 60 2 120 M570 40 q-6 50 4 96" class="curtain-fold"/>
+        <rect x="556" y="134" width="44" height="8" rx="4" class="tie"/>
+        <!-- fairy lights -->
+        <g class="lights">
+          <path d="M160 36 Q270 78 380 40 Q490 78 600 36"/>
+          <circle cx="190" cy="50" r="3.4"/><circle cx="222" cy="59" r="3.4"/><circle cx="256" cy="63" r="3.4"/><circle cx="290" cy="62" r="3.4"/>
+          <circle cx="324" cy="56" r="3.4"/><circle cx="356" cy="47" r="3.4"/><circle cx="404" cy="47" r="3.4"/><circle cx="436" cy="56" r="3.4"/>
+          <circle cx="470" cy="62" r="3.4"/><circle cx="504" cy="63" r="3.4"/><circle cx="538" cy="59" r="3.4"/><circle cx="570" cy="50" r="3.4"/>
+        </g>
+        <!-- plant on the sill -->
+        <path d="M300 214 q-12 -18 -2 -34 q8 10 4 34z M306 214 q4 -24 20 -30 q2 16 -16 30z M296 214 q-16 -8 -24 -22 q16 0 24 22z" class="leaf"/>
+        <path d="M288 214 h28 l-4 18 h-20z" class="pot"/><rect x="286" y="211" width="32" height="6" rx="2" class="pot-rim"/>
         <!-- desk -->
         <rect x="0" y="262" width="800" height="38" class="desk"/>
         <!-- lamp -->
-        <circle cx="690" cy="168" r="150" fill="url(#lampglow)" class="glow"/>
-        <path d="M650 262 h80 l-8 -10 h-64z" class="lamp-base"/>
-        <path d="M688 252 q-4 -50 26 -82" class="lamp-arm"/>
-        <path d="M680 168 l60 -10 l-10 -34 q-26 -8 -46 10z" class="lamp-shade"/>
-        <!-- mushaf on stand -->
+        <circle cx="700" cy="170" r="150" fill="url(#lampglow)" class="glow"/>
+        <path d="M660 262 h80 l-8 -10 h-64z" class="lamp-base"/>
+        <path d="M698 252 q-4 -50 26 -82" class="lamp-arm"/>
+        <path d="M690 168 l60 -10 l-10 -34 q-26 -8 -46 10z" class="lamp-shade"/>
+        <!-- books -->
+        <g class="books"><rect x="606" y="250" width="44" height="12" rx="2"/><rect x="610" y="240" width="38" height="10" rx="2"/><rect x="604" y="231" width="42" height="9" rx="2"/></g>
+        <!-- mushaf on its stand -->
         <path d="M60 262 l40 -36 l40 36" class="stand"/>
         <path d="M58 236 q42 -14 42 -10 q0 -4 42 10 l-4 -30 q-38 -12 -38 -8 q0 -4 -38 8z" class="book"/>
+        <!-- candle -->
+        <rect x="160" y="238" width="12" height="24" rx="2" class="candle"/>
+        <path d="M166 237 q-6 -8 0 -16 q6 8 0 16z" class="flame"/>
         <!-- tea -->
         <g class="tea">
-          <path d="M590 238 h40 v14 q0 10 -20 10 q-20 0 -20 -10z" class="cup"/>
-          <path d="M630 242 q10 0 10 7 q0 7 -10 7" class="handle"/>
-          <path d="M602 230 q-6 -8 0 -16 q6 -8 0 -16" class="steam s1"/>
-          <path d="M616 230 q-6 -8 0 -16 q6 -8 0 -16" class="steam s2"/>
+          <path d="M540 238 h40 v14 q0 10 -20 10 q-20 0 -20 -10z" class="cup"/>
+          <path d="M580 242 q10 0 10 7 q0 7 -10 7" class="handle"/>
+          <path d="M552 230 q-6 -8 0 -16 q6 -8 0 -16" class="steam s1"/>
+          <path d="M566 230 q-6 -8 0 -16 q6 -8 0 -16" class="steam s2"/>
         </g>
       </svg>
       <canvas class="rain" id="rain"></canvas>

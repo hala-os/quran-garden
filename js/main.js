@@ -6,7 +6,7 @@ import {
 } from './data.js';
 import { renderPage, highlight, fit } from './mushaf.js';
 import { Player, RECITERS } from './player.js';
-import { applyTheme, startRain, rainSound } from './scene.js';
+import { applyTheme, startRain, fireSound } from './scene.js';
 
 const $ = (s, r = document) => r.querySelector(s);
 const h = (html) => { const t = document.createElement('template'); t.innerHTML = html.trim(); return t.content.firstElementChild; };
@@ -33,6 +33,10 @@ let mushafPage = 106;
   };
   new ResizeObserver(fitScene).observe(sceneEl); fitScene();
   window.addEventListener('hashchange', route);
+  const sb = $('#soundBtn');
+  const syncSound = () => sb.setAttribute('aria-pressed', S.settings.fire ? 'true' : 'false');
+  syncSound();
+  sb.addEventListener('click', () => { S.settings.fire = !S.settings.fire; fireSound(S.settings.fire); store.save(); syncSound(); if (currentView === 'settings') viewSettings(); });
   setupPlayerBar();
   route();
   if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
@@ -537,7 +541,7 @@ function viewSettings() {
       <h3>Look &amp; feel</h3>
       ${radio('theme', ['auto', 'night', 'morning'], st.theme, x => ({ auto: 'Follow the time', night: 'Rainy night', morning: 'Soft morning' }[x]))}
       ${radio('spread', ['auto', 'single', 'double'], st.spread, x => ({ auto: 'Auto pages', single: 'One page', double: 'Two pages' }[x]))}
-      <label class="check"><input type="checkbox" name="rain" ${st.rain ? 'checked' : ''}> Gentle rain sound</label>
+      <label class="check"><input type="checkbox" name="fire" ${st.fire ? 'checked' : ''}> Crackling fire sound</label>
     </div>
 
     <div class="card">
@@ -578,7 +582,7 @@ function viewSettings() {
   };
   v.querySelector('[name=reciter]').onchange = (e) => { st.reciter = e.target.value; afterSettings('reciter'); };
   v.querySelector('[name=bridgeAyahs]').onchange = (e) => { st.bridgeAyahs = e.target.checked; afterSettings(); };
-  v.querySelector('[name=rain]').onchange = (e) => { st.rain = e.target.checked; rainSound(st.rain); afterSettings(); };
+  v.querySelector('[name=fire]').onchange = (e) => { st.fire = e.target.checked; fireSound(st.fire); afterSettings(); };
   $('#msSurah').onchange = (e) => { const s = surah(+e.target.value); $('#msFrom').value = s.start; $('#msTo').value = s.end; };
   $('#msApply').onclick = () => {
     const a = clampPage(+$('#msFrom').value), b = clampPage(+$('#msTo').value);
@@ -611,8 +615,8 @@ function afterSettings(name) {
   if (name) toast('Saved', 1200);
 }
 
-// first tap anywhere resumes the rain sound if it's on (browsers need a tap before sound)
-document.addEventListener('pointerdown', () => { if (S?.settings.rain) rainSound(true); }, { once: true });
+// first tap anywhere resumes the fire sound if it's on (browsers need a tap before sound)
+document.addEventListener('pointerdown', () => { if (S?.settings.fire) fireSound(true); }, { once: true });
 
 // ---------- bits ----------
 let toastTimer;

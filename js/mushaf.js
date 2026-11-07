@@ -1,10 +1,13 @@
-// Renders one Madinah mushaf page (15 lines) with the QCF4 page fonts.
-import { loadPage, loadFont, surah, juzOfPage, ar, pageRange } from './data.js';
+// Renders one page of the classic Madinah mushaf: 15 lines, same words on every line as print.
+import { loadPage, loadPageFont, loadOrnamentFont, surah, juzOfPage, ar, pageRange } from './data.js';
+
+const BASMALA = ''; // basmala glyph in QCF4_Hafs_01
 
 export async function renderPage(el, p, { onVerse } = {}) {
   el.innerHTML = '';
   el.dataset.page = p;
   el.classList.add('mushaf-page', 'loading');
+  el.classList.toggle('opening', p <= 2);
   const { from } = pageRange(p);
   const head = document.createElement('div');
   head.className = 'mp-head';
@@ -16,14 +19,19 @@ export async function renderPage(el, p, { onVerse } = {}) {
   foot.textContent = ar(p);
   el.append(head, body, foot);
 
-  let data;
+  let data, font;
   try {
     data = await loadPage(p);
-    const fonts = new Set(['QCF4_QBSML', data.font]);
-    data.lines.forEach(l => l.words.forEach(w => w.font && fonts.add(w.font)));
-    await Promise.all([...fonts].map(loadFont));
+    const needs = data.lines.map(l => l.type);
+    const [f] = await Promise.all([
+      loadPageFont(p),
+      needs.includes('surah-header') ? loadOrnamentFont('QCF4_QBSML') : null,
+      needs.includes('basmala') ? loadOrnamentFont('QCF4_Hafs_01') : null,
+    ]);
+    font = f;
+    if (!font) throw new Error('font');
   } catch (e) {
-    body.innerHTML = `<div class="mp-error">This page couldn't load. Check your connection, then tap to try again.</div>`;
+    body.innerHTML = `<div class="mp-error">This page couldn't load. Check your connection, then tap here to try again.</div>`;
     body.firstChild.onclick = () => renderPage(el, p, { onVerse });
     el.classList.remove('loading');
     return;
@@ -34,26 +42,29 @@ export async function renderPage(el, p, { onVerse } = {}) {
   for (const line of data.lines) {
     const row = document.createElement('div');
     row.className = 'ml';
-    const t = line.words[0]?.type;
-    if (t === 'surah_header') row.classList.add('ml-header');
-    if (t === 'bismillah') row.classList.add('ml-bism');
-    for (const w of line.words) {
-      const span = document.createElement('span');
-      span.className = 'w w-' + w.type;
-      span.textContent = w.char;
-      span.style.fontFamily = `'${w.font}'`;
-      if (w.verse_key) span.dataset.v = w.verse_key;
-      if (w.type === 'surah_header') {
-        const s = surah(w.sura);
-        span.title = s.ar;
-        span.setAttribute('aria-label', 'سورة ' + s.ar);
-      } else if (w.text) span.setAttribute('aria-label', w.text);
-      row.appendChild(span);
+    if (line.type === 'surah-header') {
+      const s = +line.surah;
+      row.classList.add('ml-header');
+      row.innerHTML = `<span class="sh-frame"><span class="sh-name" style="font-family:'QCF4_QBSML'" aria-label="سورة ${surah(s).ar}">${String.fromCharCode(0xF100 + s - 1)}</span></span>`;
+    } else if (line.type === 'basmala') {
+      row.classList.add('ml-bism');
+      row.innerHTML = `<span style="font-family:'QCF4_Hafs_01'" aria-label="بسم الله الرحمن الرحيم">${BASMALA}</span>`;
+    } else {
+      for (const w of line.words) {
+        const span = document.createElement('span');
+        const [s, a] = w.location.split(':');
+        span.className = 'w';
+        span.dataset.v = `${s}:${a}`;
+        span.textContent = w.qpcV2.replace(/\s+/g, '');
+        span.setAttribute('aria-label', w.word);
+        frag.appendChild(span);
+        row.appendChild(span);
+      }
+      row.style.fontFamily = `'${font}'`;
     }
     frag.appendChild(row);
   }
   body.appendChild(frag);
-  body.classList.toggle('mp-short', data.lines.length < 15);
   el.classList.remove('loading');
   if (onVerse) {
     body.onclick = (e) => {
@@ -68,7 +79,7 @@ export async function renderPage(el, p, { onVerse } = {}) {
   }
 }
 
-// Sizes the text so the longest line fills the page width, like a printed mushaf.
+// Size the text so full lines span the page edge to edge, like print, without stretching.
 export function fit(el) {
   const body = el.querySelector('.mp-body');
   if (!body || !body.children.length) return;
@@ -78,19 +89,24 @@ export function fit(el) {
   body.style.fontSize = base + 'px';
   const rows = [...body.children];
   rows.forEach(r => r.classList.remove('justify'));
-  let widest = 0;
   const widths = rows.map(r => {
-    if (r.classList.contains('ml-header')) return 0;
+    if (!r.querySelector('.w')) return 0;
     let w = 0; for (const c of r.children) w += c.getBoundingClientRect().width;
-    widest = Math.max(widest, w);
-    return w;
+    const gap = parseFloat(getComputedStyle(r).columnGap) || 0;
+    return w + gap * (r.children.length - 1);
   });
-  if (!widest) return;
-  const byWidth = base * (W * 0.985) / widest;
-  const byHeight = H / 15 / 1.55;
+  // The widest line just fits; the others are spread to the same edges, like print.
+  const sorted = widths.filter(Boolean).sort((a, b) => b - a);
+  if (!sorted.length) return;
+  const opening = el.classList.contains('opening');
+  const byWidth = base * (W * (opening ? 0.72 : 0.985)) / sorted[0];
+  const byHeight = H / 15 / 1.45;
   const size = Math.min(byWidth, byHeight);
   body.style.fontSize = size.toFixed(2) + 'px';
-  rows.forEach((r, i) => { if (widths[i] > widest * 0.86) r.classList.add('justify'); });
+  if (!opening) {
+    const scale = size / base;
+    rows.forEach((r, i) => { if (widths[i] * scale > W * 0.55) r.classList.add('justify'); });
+  }
 }
 
 export function highlight(root, keys, cls) {

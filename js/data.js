@@ -1,7 +1,18 @@
-// Quran data: mushaf pages (QCF4 Madinah 1441, Hafs), surah info, tafsir As-Sa'di.
-// Fonts and page data load from the quran-qcf4 package on the jsDelivr CDN, so they
-// are never re-hosted here. Tafsir comes from the open tafsir_api dataset.
+// Quran data: the classic Madinah mushaf layout (King Fahd Complex, QPC V2 page fonts, Hafs),
+// surah info, and tafsir As-Sa'di. Page layouts and fonts load from public CDNs and are not
+// re-hosted here.
 
+// Line-by-line page layouts (same words on every line as the printed Madinah mushaf)
+const LAYOUT_CDNS = [
+  'https://cdn.jsdelivr.net/gh/zonetecde/mushaf-layout@main/mushaf',
+  'https://raw.githubusercontent.com/zonetecde/mushaf-layout/main/mushaf',
+];
+// QPC V2 per-page fonts
+const PAGE_FONT_CDNS = [
+  (p) => `https://cdn.jsdelivr.net/gh/imajidikaji-source/quran-fonts@main/fonts/p${p}.woff2`,
+  (p) => `https://verses.quran.foundation/fonts/quran/hafs/v2/woff2/p${p}.woff2`,
+];
+// Surah header + basmala ornaments (QCF4 font set)
 export const QCF_CDNS = [
   'https://cdn.jsdelivr.net/npm/quran-qcf4@1.1.0',
   'https://cdn.jsdelivr.net/gh/MohamadHajjRabee/quran-qcf4@main',
@@ -91,9 +102,9 @@ export async function loadPage(p) {
   const pad = String(p).padStart(3, '0');
   const job = (async () => {
     let lastErr;
-    for (const base of QCF_CDNS) {
+    for (const base of LAYOUT_CDNS) {
       try {
-        const r = await fetch(`${base}/pages/${pad}.json`);
+        const r = await fetch(`${base}/page-${pad}.json`);
         if (r.ok) return await r.json();
       } catch (e) { lastErr = e; }
     }
@@ -105,22 +116,29 @@ export async function loadPage(p) {
 }
 
 const fontJobs = new Map();
-export function loadFont(name) {
-  if (fontJobs.has(name)) return fontJobs.get(name);
-  const file = name === 'QCF4_QBSML' ? `${name}.woff2` : `${name}_W.woff2`;
-  const job = (async () => {
-    for (const base of QCF_CDNS) {
-      try {
-        const ff = new FontFace(name, `url(${base}/fonts-woff2/${file})`, { display: 'block' });
-        await ff.load();
-        document.fonts.add(ff);
-        return true;
-      } catch (e) { /* try next */ }
-    }
-    return false;
-  })();
-  fontJobs.set(name, job);
-  return job;
+async function tryFonts(name, urls) {
+  for (const url of urls) {
+    try {
+      const ff = new FontFace(name, `url(${url})`, { display: 'block' });
+      await ff.load();
+      document.fonts.add(ff);
+      return true;
+    } catch (e) { /* try next */ }
+  }
+  return false;
+}
+export function loadPageFont(p) {
+  const name = `qpc-p${p}`;
+  if (!fontJobs.has(name)) fontJobs.set(name, tryFonts(name, PAGE_FONT_CDNS.map(f => f(p))));
+  return fontJobs.get(name).then(ok => ok ? name : null);
+}
+// 'QCF4_QBSML' (surah headers) and 'QCF4_Hafs_01' (basmala)
+export function loadOrnamentFont(name) {
+  if (!fontJobs.has(name)) {
+    const file = name === 'QCF4_QBSML' ? `${name}.woff2` : `${name}_W.woff2`;
+    fontJobs.set(name, tryFonts(name, QCF_CDNS.map(b => `${b}/fonts-woff2/${file}`)));
+  }
+  return fontJobs.get(name);
 }
 
 // ---- tafsir ----

@@ -5,7 +5,7 @@ export function applyTheme(setting) {
   const mode = setting === 'auto' ? (h >= 6 && h < 18 ? 'morning' : 'night') : setting;
   document.documentElement.dataset.mode = mode;
   const meta = document.querySelector('meta[name=theme-color]');
-  if (meta) meta.content = mode === 'night' ? '#1b2330' : '#efe4d0';
+  if (meta) meta.content = mode === 'night' ? '#2a201c' : '#f4ebdd';
   return mode;
 }
 
@@ -52,33 +52,68 @@ export function startRain(canvas) {
   return () => cancelAnimationFrame(raf);
 }
 
-// Gentle rain sound, made in the browser (no audio file needed).
-let audioCtx = null, rainNode = null;
-export function rainSound(on) {
+// A soft crackling fire, made in the browser (no audio file needed).
+let audioCtx = null, fireNode = null;
+function fireBuffer(ctx) {
+  const sr = ctx.sampleRate, secs = 14, len = sr * secs;
+  const buf = ctx.createBuffer(2, len, sr);
+  const L = buf.getChannelData(0), R = buf.getChannelData(1);
+  // warm low rumble (brown noise) with a slow, breathing swell
+  let b = 0, swell = 0.5, target = 0.5;
+  for (let i = 0; i < len; i++) {
+    if (i % (sr >> 2) === 0) target = 0.35 + Math.random() * 0.5;
+    swell += (target - swell) * 0.00004;
+    b = (b + (Math.random() * 2 - 1) * 0.02) * 0.995;
+    const v = b * 1.6 * swell;
+    L[i] = v; R[i] = v * 0.94;
+  }
+  // crackles: tiny bright snaps, often in little clusters, plus the odd bigger pop
+  const snap = (t, amp, ms, bright) => {
+    const n = Math.floor(sr * ms / 1000), start = Math.floor(t * sr), pan = Math.random();
+    let prev = 0;
+    for (let k = 0; k < n && start + k < len; k++) {
+      const w = Math.random() * 2 - 1;
+      const hp = bright ? w - prev : w * 0.6 + prev * 0.4; prev = w;
+      const v = hp * amp * Math.exp(-k / (n * 0.22));
+      L[start + k] += v * (1 - pan * 0.5); R[start + k] += v * (0.5 + pan * 0.5);
+    }
+  };
+  let t = 0.1;
+  while (t < secs - 0.2) {
+    const cluster = Math.random() < 0.3 ? 2 + Math.floor(Math.random() * 5) : 1;
+    for (let c = 0; c < cluster; c++) snap(t + c * (0.01 + Math.random() * 0.05), 0.08 + Math.random() * 0.25, 2 + Math.random() * 10, true);
+    if (Math.random() < 0.07) snap(t + 0.02, 0.35 + Math.random() * 0.3, 18 + Math.random() * 25, false);
+    t += 0.04 + Math.random() * Math.random() * 0.6;
+  }
+  // smooth the loop seam
+  const fade = Math.floor(sr * 0.6);
+  for (let k = 0; k < fade; k++) {
+    const a = k / fade;
+    L[k] = L[k] * a + L[len - fade + k] * (1 - a);
+    R[k] = R[k] * a + R[len - fade + k] * (1 - a);
+  }
+  return { buf, loopEnd: secs - 0.6 };
+}
+
+export function fireSound(on) {
   if (!on) {
-    if (rainNode) { rainNode.gain.gain.setTargetAtTime(0, audioCtx.currentTime, 0.4); const n = rainNode; setTimeout(() => n.src.stop(), 1500); rainNode = null; }
+    if (fireNode) {
+      const n = fireNode; fireNode = null;
+      n.gain.gain.setTargetAtTime(0, audioCtx.currentTime, 0.4);
+      setTimeout(() => n.src.stop(), 1500);
+    }
     return;
   }
-  if (rainNode) return;
+  if (fireNode) return;
   audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
   audioCtx.resume();
-  const len = audioCtx.sampleRate * 4;
-  const buf = audioCtx.createBuffer(2, len, audioCtx.sampleRate);
-  for (let c = 0; c < 2; c++) {
-    const d = buf.getChannelData(c);
-    let b0 = 0, b1 = 0, b2 = 0;
-    for (let i = 0; i < len; i++) { // pink-ish noise
-      const white = Math.random() * 2 - 1;
-      b0 = 0.99765 * b0 + white * 0.099046; b1 = 0.963 * b1 + white * 0.2965; b2 = 0.57 * b2 + white * 1.0526;
-      d[i] = (b0 + b1 + b2 + white * 0.1848) * 0.06;
-    }
-  }
-  const src = audioCtx.createBufferSource(); src.buffer = buf; src.loop = true;
-  const lp = audioCtx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 2200;
-  const hp = audioCtx.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 300;
+  const { buf, loopEnd } = fireBuffer(audioCtx);
+  const src = audioCtx.createBufferSource();
+  src.buffer = buf; src.loop = true; src.loopStart = 0; src.loopEnd = loopEnd;
+  const lp = audioCtx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 6500;
   const gain = audioCtx.createGain(); gain.gain.value = 0;
-  src.connect(hp).connect(lp).connect(gain).connect(audioCtx.destination);
+  src.connect(lp).connect(gain).connect(audioCtx.destination);
   src.start();
-  gain.gain.setTargetAtTime(0.35, audioCtx.currentTime, 0.8);
-  rainNode = { src, gain };
+  gain.gain.setTargetAtTime(0.5, audioCtx.currentTime, 0.8);
+  fireNode = { src, gain };
 }

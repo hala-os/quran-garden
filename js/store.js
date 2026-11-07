@@ -33,7 +33,7 @@ export function defaultState() {
       rangeRepeat: 3,
       speed: 1,
       theme: 'auto',            // auto | night | morning
-      rain: false,
+      fire: false,
       spread: 'auto',           // auto | single | double
     },
     pages,                      // page -> { status: seed|learning|review, learnedOn, interval, due, last, ratings:[] }
