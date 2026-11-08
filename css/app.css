@@ -480,3 +480,18 @@ body[data-view="mushaf"] .timer-btn, body[data-view="settings"] .timer-btn { wid
 .mushaf-view.testing .mushaf-page { --h: min(calc(100dvh - 248px), calc((100vw - 32px) / 0.6), 940px); }
 .mushaf-view.testing .book.double .mushaf-page { --h: min(calc(100dvh - 248px), calc((100vw - 150px) / 2 / 0.6), 940px); }
 @media (max-width: 480px) { .mv-bar #testBtn .lbl, .mv-bar #markBtn .lbl { display: none; } .test-bar .btn { padding: 8px 12px; font-size: .9rem; } }
+
+/* ---------- notes ---------- */
+.note-box { margin: 14px 0 4px; padding: 12px; border-radius: 14px; background: var(--card2); border: 1px solid var(--line); }
+.note-box textarea { width: 100%; box-sizing: border-box; margin-top: 6px; border-radius: 10px; border: 1px solid var(--line); background: var(--card); color: var(--ink); font: inherit; padding: 8px 10px; resize: vertical; }
+.note-like { display: flex; align-items: center; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+.note-like select { max-width: 170px; } .note-like input { width: 72px; }
+.btn.small { padding: 6px 12px; font-size: .85rem; }
+.w.noted { text-decoration: underline dotted color-mix(in srgb, var(--accent) 70%, transparent); text-underline-offset: .35em; text-decoration-thickness: 2px; }
+.book.testing .w.noted { text-decoration: none; }
+.notes-list { margin: 10px 0 4px; padding: 10px 12px; border-radius: 12px; background: color-mix(in srgb, var(--accent) 10%, var(--card)); }
+.note-item { padding: 6px 0; border-top: 1px dashed var(--line); font-size: .92rem; }
+.note-item:first-of-type { border-top: 0; }
+.note-item b { font-family: var(--arabic); font-weight: 600; }
+.note-chip { display: block; margin: 8px 0 2px; font-size: .9rem; }
+.mark-page .chip { white-space: nowrap; border-radius: 999px; }

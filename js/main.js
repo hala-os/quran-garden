@@ -101,6 +101,44 @@ function paintTimer() {
   if (currentView === 'today' && $('#tToday')) { $('#tToday').textContent = fmtMin(timeToday()); $('#tSplit').innerHTML = splitLine(); }
 }
 
+// ---------- notes: mutashabihat and little reminders on an ayah ----------
+function noteEditor(body, key) {
+  S.notes ||= {};
+  const n = S.notes[key] || {};
+  const ta = body.querySelector('#noteText'), ls = body.querySelector('#likeS'), la = body.querySelector('#likeA'), go = body.querySelector('#likeGo');
+  ta.value = n.text || '';
+  if (n.like) { const [x, y] = n.like.split(':'); ls.value = x; la.value = y; }
+  const showGo = () => { go.hidden = !(ls.value && +la.value); };
+  showGo();
+  let t;
+  const saveNote = () => {
+    const text = ta.value.trim();
+    const like = ls.value && +la.value ? `${ls.value}:${Math.min(+la.value, surah(+ls.value).verses)}` : '';
+    if (!text && !like) delete S.notes[key];
+    else S.notes[key] = { text, like, on: todayStr() };
+    store.save(); refreshHighlights(); showGo();
+  };
+  ta.oninput = () => { clearTimeout(t); t = setTimeout(saveNote, 400); };
+  ta.onblur = () => { clearTimeout(t); saveNote(); };
+  ls.onchange = la.onchange = saveNote;
+  go.onclick = () => { const [x, y] = [+ls.value, +la.value]; closeSheet(); goPage(pageOfVerse([x, y])); setTimeout(() => openAyahSheet(`${x}:${y}`), 400); };
+}
+
+function versesOn(p) {
+  const { from, to } = pageRange(p); const out = [];
+  for (let v = from; v && cmpVerse(v, to) <= 0; v = nextV(v)) out.push(v);
+  return out;
+}
+function notesOn(p) { return versesOn(p).map(vkey).filter(k => S.notes?.[k]).map(k => [k, S.notes[k]]); }
+function notesEl(p) {
+  const ns = notesOn(p); if (!ns.length) return null;
+  return h(`<div class="notes-list"><div class="t-head">Your notes on this page</div>${ns.map(([k, n]) => {
+    const [s, a] = k.split(':').map(Number);
+    const like = n.like ? (() => { const [x, y] = n.like.split(':').map(Number); return ` <span class="soft">· similar to ${surah(x).ar} ${ar(y)}</span>`; })() : '';
+    return `<div class="note-item"><b>${surah(s).ar} ${ar(a)}</b>${like}${n.text ? `<div>${esc(n.text)}</div>` : ''}</div>`;
+  }).join('')}</div>`);
+}
+
 // ---------- self-test: hide the page, recite, reveal line by line ----------
 let testing = false;
 function setTesting(on, quiet) {
@@ -155,6 +193,7 @@ function pageMarkEl(p, refresh) {
       <div class="pc-sub">Page ${p} · ${!info ? 'not memorized yet' : info.status === 'seed' ? 'sleeping seed' : info.status === 'learning' ? 'settling in this week' : 'in review'}${info?.only ? ` · only ${info.only.map(x => surah(x).ar).join('، ')}` : ''}</div></div></div>
     <div class="mp-acts"></div></div>`);
   const acts = el.querySelector('.mp-acts');
+  const ne = notesEl(p); if (ne) el.insertBefore(ne, acts);
   const done = (msg) => { planner.todayPlan(S, today, true); store.save(); toast(msg); growWindow(); refresh?.(); };
   if (growingPage) {
     acts.append(h(`<p class="hint">Reviewed it today? How did it feel?</p>`));
@@ -339,6 +378,12 @@ function reviewCard(p, rating) {
       </div>
     </div>`);
   el.querySelector('[data-a=open]').onclick = () => openMushafLoop(p, p, false);
+  const nn = notesOn(p).length;
+  if (nn) {
+    const nb = h(`<button class="link note-chip">📝 ${nn} note${nn > 1 ? 's' : ''} to keep in mind</button>`);
+    nb.onclick = () => { const b = h('<div><h3>Before you recite</h3></div>'); b.append(notesEl(p)); openSheet(b); };
+    el.querySelector('.pc-main').after(nb);
+  }
   el.querySelectorAll('[data-r]').forEach(b => b.onclick = () => {
     if (rating === b.dataset.r) planner.unrate(S, p); else planner.rate(S, p, b.dataset.r);
     store.save(); viewToday();
@@ -511,6 +556,7 @@ function refreshHighlights() {
   highlight(book, ss ? ss.verses.map(vkey) : null, 'in-range');
   highlight(book, ss ? vkey(ss.verses[ss.i]) : null, 'now');
   highlight(book, selectedVerse, 'sel');
+  highlight(book, Object.keys(S.notes || {}), 'noted');
 }
 
 function pageOfVerse(v) {
@@ -632,8 +678,18 @@ function openAyahSheet(key) {
       <button class="btn ghost" data-a="from">Start a loop here</button>
       <button class="btn ghost" data-a="to">End the loop here</button>
     </div>
+    <div class="note-box">
+      <div class="t-head">My note <span class="soft small">· mix-ups, reminders, anything</span></div>
+      <textarea id="noteText" rows="2" placeholder="e.g. don't mix up with the ayah in Al-Baqarah that ends differently"></textarea>
+      <div class="note-like"><span class="soft small">Similar ayah</span>
+        <select id="likeS"><option value="">none</option>${META.surahs.map(x => `<option value="${x[0]}">${x[0]}. ${x[1]}</option>`).join('')}</select>
+        <input id="likeA" type="number" min="1" placeholder="ayah" inputmode="numeric">
+        <button class="btn ghost small" id="likeGo" hidden>Go there</button>
+      </div>
+    </div>
     <div class="tafsir"><div class="t-head">تفسير السعدي</div><div class="t-body" dir="rtl">…</div></div>
   </div>`);
+  noteEditor(body, key);
   body.querySelector('[data-a=play]').onclick = () => {
     closeSheet();
     const verses = []; let v = [s, a];

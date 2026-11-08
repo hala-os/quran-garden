@@ -40,6 +40,7 @@ export function defaultState() {
     days: {},                   // date -> { reviewed: {page: rating}, listenedSec, learned: [pages] }
     plans: {},                  // date -> frozen Today plan
     journal: {},                // date -> text (step 3)
+    notes: {},                  // 's:a' -> { text, like: 's:a', on: date }  mutashabihat & reminders
     lastPage: 106,
   };
 }
