@@ -2,11 +2,11 @@ import * as store from './store.js';
 import { todayStr } from './store.js';
 import * as planner from './planner.js';
 import {
-  loadMeta, META, surah, pageLabel, pageSurahNames, ar, versesForPages, vkey, pageRange, cmpVerse, tafsir, juzOfPage, loadPage,
+  loadMeta, META, surah, pageLabel, pageSurahNames, pageSurahs, ar, versesForPages, vkey, pageRange, cmpVerse, tafsir, juzOfPage, loadPage,
 } from './data.js';
 import { renderPage, highlight, fit } from './mushaf.js';
 import { Player, RECITERS } from './player.js';
-import { applyTheme, startRain, fireSound } from './scene.js';
+import { applyTheme, themeOf, startRain, fireSound } from './scene.js';
 import { viewGarden, windowLevel } from './garden.js';
 import { popOut, closePopout, refreshPopout, canPopOut } from './popout.js';
 
@@ -23,8 +23,9 @@ let mushafPage = 106;
   await loadMeta();
   S = store.load();
   mushafPage = S.lastPage || 106;
-  applyTheme(S.settings.theme);
-  setInterval(() => applyTheme(S.settings.theme), 5 * 60 * 1000);
+  Object.assign(S.settings, themeOf(S.settings));
+  applyTheme(S.settings);
+  setInterval(() => applyTheme(S.settings), 5 * 60 * 1000);
   startRain($('#rain'));
   const art = $('.scene-art'), sceneEl = $('#scene');
   const fitScene = () => {
@@ -66,9 +67,73 @@ function route() {
 }
 const clampPage = (p) => Math.max(1, Math.min(604, p || 1));
 
+// ---------- quick marking: memorized / reviewed, right from a page ----------
+function openMarkSheet(ps) {
+  const body = h(`<div><h3>${ps.length > 1 ? 'These pages' : 'This page'}</h3><div class="mark-list"></div></div>`);
+  const list = body.querySelector('.mark-list');
+  const redraw = () => { list.innerHTML = ''; ps.forEach(p => list.append(pageMarkEl(p, redraw))); };
+  redraw();
+  openSheet(body);
+}
+
+// The little "how is this page doing" panel: mark it memorized, or say how a review felt.
+function pageMarkEl(p, refresh) {
+  const info = S.pages[p];
+  const on = pageSurahs(p);
+  const growingPage = info && (info.status === 'review' || info.status === 'learning');
+  const covered = growingPage ? (info.only || on) : [];
+  const today = todayStr();
+  const rated = planner.dayOf(S, today).reviewed[p];
+  const el = h(`<div class="mark-page">
+    <div class="mp-row"><div class="pc-num">${ar(p)}</div><div><div class="pc-title">${pageLabel(p)}</div>
+      <div class="pc-sub">Page ${p} · ${!info ? 'not memorized yet' : info.status === 'seed' ? 'sleeping seed' : info.status === 'learning' ? 'settling in this week' : 'in review'}${info?.only ? ` · only ${info.only.map(x => surah(x).ar).join('، ')}` : ''}</div></div></div>
+    <div class="mp-acts"></div></div>`);
+  const acts = el.querySelector('.mp-acts');
+  const done = (msg) => { planner.todayPlan(S, today, true); store.save(); toast(msg); growWindow(); refresh?.(); };
+  if (growingPage) {
+    acts.append(h(`<p class="hint">Reviewed it today? How did it feel?</p>`));
+    const r = h(`<div class="rate">${['strong', 'okay', 'shaky'].map(x => `<button class="chip ${rated === x ? 'on' : ''}" data-r="${x}">${{ strong: 'Strong', okay: 'Okay', shaky: 'Shaky' }[x]}</button>`).join('')}</div>`);
+    r.querySelectorAll('[data-r]').forEach(b => b.onclick = () => {
+      if (rated === b.dataset.r) planner.unrate(S, p); else planner.rate(S, p, b.dataset.r);
+      done(rated === b.dataset.r ? 'Review undone' : 'Watered 💧');
+    });
+    acts.append(r);
+  }
+  const missing = on.filter(x => !covered.includes(x));
+  if (missing.length) {
+    if (on.length === 1) {
+      const b = h(`<button class="btn">I've memorized this page</button>`);
+      b.onclick = () => { planner.markLearned(S, p); done('A new seed is planted 🌱'); };
+      acts.append(b);
+    } else {
+      acts.append(h(`<p class="hint">${growingPage ? 'Also memorized:' : 'Which part have you memorized?'}</p>`));
+      const row = h(`<div class="rate"></div>`);
+      missing.forEach(x => {
+        const b = h(`<button class="chip">${surah(x).ar}</button>`);
+        b.onclick = () => {
+          planner.setStatus(S, p, p, 'review', today, x, pageSurahs);
+          if (!growingPage) { // a fresh page settles in for a week, like any new page
+            Object.assign(S.pages[p], { status: 'learning', learnedOn: today, last: today });
+            const d = planner.dayOf(S, today); if (!d.learned.includes(p)) d.learned.push(p);
+          }
+          done('A new seed is planted 🌱');
+        };
+        row.append(b);
+      });
+      if (!growingPage) {
+        const all = h(`<button class="chip">The whole page</button>`);
+        all.onclick = () => { planner.markLearned(S, p); done('A new seed is planted 🌱'); };
+        row.append(all);
+      }
+      acts.append(row);
+    }
+  }
+  return el;
+}
+
 // ---------- Garden ----------
 function showGarden() {
-  viewGarden($('#view'), { S, h, openSheet, closeSheet, toast, openMushafLoop, openWakeSheet, store, planner });
+  viewGarden($('#view'), { S, h, openSheet, closeSheet, toast, openMushafLoop, openWakeSheet, store, planner, pageMarkEl });
 }
 // the little flowers in the window grow with the garden
 function growWindow() { $('#scene').dataset.g = windowLevel(S); }
@@ -192,7 +257,7 @@ function reviewCard(p, rating) {
     <div class="pcard ${rating ? 'is-done' : ''}">
       <div class="pc-main">
         <div class="pc-num">${ar(p)}</div>
-        <div><div class="pc-title">${pageLabel(p)}</div><div class="pc-sub">Page ${p}</div></div>
+        <div><div class="pc-title">${S.pages[p]?.only ? S.pages[p].only.map(x => surah(x).ar).join('، ') : pageLabel(p)}</div><div class="pc-sub">Page ${p}${S.pages[p]?.only ? ' · only this surah' : ''}</div></div>
         <button class="icon-btn" data-a="open" aria-label="Open page ${p}">${bookIcon()}</button>
       </div>
       <div class="rate" role="group" aria-label="How did it feel?">
@@ -240,7 +305,8 @@ function listenToPages(pages) {
   const sorted = [...pages].sort((a, b) => a - b);
   let verses = [];
   for (const p of sorted) {
-    for (const v of versesForPages(p, p, false)) if (!verses.length || cmpVerse(verses[verses.length - 1], v) < 0) verses.push(v);
+    const only = S.pages[p]?.only;
+    for (const v of versesForPages(p, p, false)) if (only && !only.includes(v[0])) continue; else if (!verses.length || cmpVerse(verses[verses.length - 1], v) < 0) verses.push(v);
   }
   playVerses(verses, { rangeRepeat: 1, ayahRepeat: 1, pages: sorted, follow: false, label: "Today's review" });
 }
@@ -271,6 +337,7 @@ function viewMushaf() {
       <div class="mv-bar">
         <select id="surahSel" aria-label="Go to surah">${surahOpts}</select>
         <label class="pg"><span>Page</span><input id="pgInput" type="number" min="1" max="604" inputmode="numeric"></label>
+        <button class="btn ghost" id="markBtn">${seedIcon()} Mark</button>
         <button class="btn" id="loopBtn">${loopIcon()} Loop</button>
       </div>
       <div class="book-wrap">
@@ -283,6 +350,7 @@ function viewMushaf() {
   $('#surahSel').onchange = (e) => goPage(+e.target.value);
   $('#pgInput').onchange = (e) => goPage(clampPage(+e.target.value));
   $('#loopBtn').onclick = () => openLoopSheet();
+  $('#markBtn').onclick = () => openMarkSheet(spreadPages(mushafPage));
   $('#turnNext').onclick = () => turn(1);
   $('#turnPrev').onclick = () => turn(-1);
   // swipe: in an Arabic mushaf the next page is on the left, so swipe right to go forward
@@ -571,8 +639,11 @@ function viewSettings() {
 
     <div class="card">
       <h3>Look &amp; feel</h3>
-      <p class="hint">Day and night themes switch by themselves at 6 am and 6 pm.</p>
-      ${radio('theme', ['auto', 'pink', 'night', 'morning'], st.theme === 'rose' ? 'pink' : st.theme, x => ({ auto: 'Cocoa & linen', pink: 'Pink', night: 'Always night', morning: 'Always morning' }[x]))}
+      <p class="hint">Colors</p>
+      ${radio('palette', ['cozy', 'pink'], st.palette, x => ({ cozy: 'Cocoa & linen', pink: 'Pink' }[x]))}
+      <p class="hint">Day or night. Following the time switches at 6 am and 6 pm.</p>
+      ${radio('light', ['auto', 'day', 'night'], st.light, x => ({ auto: 'Follow the time', day: 'Always day', night: 'Always night' }[x]))}
+      <p class="hint">Pages</p>
       ${radio('spread', ['auto', 'single', 'double'], st.spread, x => ({ auto: 'Auto pages', single: 'One page', double: 'Two pages' }[x]))}
       <label class="check"><input type="checkbox" name="fire" ${st.fire ? 'checked' : ''}> Crackling fire sound</label>
     </div>
@@ -580,7 +651,7 @@ function viewSettings() {
     <div class="card">
       <h3>My pages</h3>
       <p class="hint">${countsLine()}. Mark pages as memorized (they join review), sleeping seeds, or not memorized.</p>
-      <label class="line">Surah <select id="msSurah"><option value="">Choose a surah…</option>${surahOpts}</select></label>
+      <label class="line">Surah <select id="msSurah"><option value="">Choose a surah…</option>${META.surahs.map(x => `<option value="${x[0]}">${x[0]}. ${x[1]} · ${x[2]}</option>`).join('')}</select></label>
       <div class="two">
         <label>From page <input id="msFrom" type="number" min="1" max="604" value="1"></label>
         <label>To page <input id="msTo" type="number" min="1" max="604" value="1"></label>
@@ -599,7 +670,7 @@ function viewSettings() {
         <label class="btn ghost file">Restore a backup<input type="file" id="imp" accept="application/json" hidden></label>
       </div>
     </div>
-    <p class="soft center small">Bustan · Mushaf font QCF4 (King Fahd Complex, 1441) · Tafsir As-Sa'di · Recitations from mp3quran.net and everyayah.com</p>
+    <p class="soft center small">Bustan · Madinah mushaf, QPC fonts (King Fahd Complex) · Tafsir As-Sa'di · Recitations from mp3quran.net and everyayah.com</p>
   </section>`));
 
   v.querySelectorAll('input[type=radio]').forEach(r => r.onchange = () => {
@@ -616,14 +687,17 @@ function viewSettings() {
   v.querySelector('[name=reciter]').onchange = (e) => { st.reciter = e.target.value; afterSettings('reciter'); };
   v.querySelector('[name=bridgeAyahs]').onchange = (e) => { st.bridgeAyahs = e.target.checked; afterSettings(); };
   v.querySelector('[name=fire]').onchange = (e) => { st.fire = e.target.checked; fireSound(st.fire); afterSettings(); };
-  $('#msSurah').onchange = (e) => { const s = surah(+e.target.value); $('#msFrom').value = s.start; $('#msTo').value = s.end; };
+  $('#msSurah').onchange = (e) => { if (!e.target.value) return; const s = surah(+e.target.value); $('#msFrom').value = s.start; $('#msTo').value = s.end; };
   $('#msApply').onclick = () => {
     const a = clampPage(+$('#msFrom').value), b = clampPage(+$('#msTo').value);
     const status = $('#msStatus').value;
-    planner.setStatus(S, Math.min(a, b), Math.max(a, b), status);
+    // a whole surah picked: only that surah counts on pages it shares with its neighbours
+    const sid = +$('#msSurah').value || null;
+    const only = sid && surah(sid).start === Math.min(a, b) && surah(sid).end === Math.max(a, b) ? sid : null;
+    planner.setStatus(S, Math.min(a, b), Math.max(a, b), status, todayStr(), only, pageSurahs);
     planner.todayPlan(S, todayStr(), true);
     store.save();
-    toast(`Pages ${Math.min(a, b)}–${Math.max(a, b)} updated`);
+    toast(only ? `${surah(only).en} updated` : `Pages ${Math.min(a, b)}–${Math.max(a, b)} updated`);
     viewSettings();
   };
   $('#exp').onclick = () => {
@@ -642,7 +716,7 @@ function viewSettings() {
 }
 
 function afterSettings(name) {
-  if (name === 'theme') applyTheme(S.settings.theme);
+  if (name === 'palette' || name === 'light') applyTheme(S.settings);
   if (['minutes', 'newPerDay', 'newDays', 'nextNewPage'].includes(name)) planner.todayPlan(S, todayStr(), true);
   store.save();
   if (name) toast('Saved', 1200);

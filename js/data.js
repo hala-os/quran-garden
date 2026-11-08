@@ -54,6 +54,9 @@ export function pageSurahNames(p) {
   return out.join(' · ');
 }
 
+// surah ids that appear on page p
+export function pageSurahs(p) { const r = META.pages[p - 1]; const out = []; for (let s = r[0]; s <= r[2]; s++) out.push(s); return out; }
+
 export const ar = (n) => String(n).replace(/\d/g, d => '٠١٢٣٤٥٦٧٨٩'[d]);
 
 // ---- verse ordering ----

@@ -120,6 +120,8 @@ export function viewGarden(v, ctx) {
   const pages = S.pages;
   const plants = {};
   for (let p = 1; p <= 604; p++) plants[p] = plantOf(pages[p], today);
+  // a page memorized for only some of its surahs grows only in those surahs' beds
+  const plantIn = (p, sid) => { const pl = plants[p]; return pl && pl.stage !== 'seed' && pages[p].only && !pages[p].only.includes(sid) ? null : pl; };
 
   // which surahs have a bed
   const next = S.settings.nextNewPage;
@@ -128,9 +130,9 @@ export function viewGarden(v, ctx) {
     const [id, , , , sp, ep] = s;
     let grow = 0, own = 0, seeds = 0;
     for (let p = sp; p <= ep; p++) {
-      const pl = plants[p];
+      const pl = plantIn(p, id);
       if (pl?.stage === 'seed') seeds++;
-      else if (pl) { grow++; if (primarySurah(p) === id) own++; }
+      else if (pl) { grow++; if (primarySurah(p) === id || pages[p].only) own++; }
     }
     // A page shared by two surahs only opens a bed for the surah it mostly belongs to.
     const nextHere = primarySurah(next) === id;
@@ -200,7 +202,7 @@ export function viewGarden(v, ctx) {
       </div>`);
     const plot = bed.querySelector('.plot');
     for (let p = b.sp; p <= b.ep; p++) {
-      const pl = plants[p];
+      const pl = plantIn(p, b.id);
       const cls = !pl ? 'empty' : pl.stage === 'seed' ? 'seed' : `${pl.stage}${pl.thirst > .15 ? ' thirsty' : ''}${pl.fresh ? ' fresh' : ''}${pl.rained ? ' rained' : ''}`;
       const label = !pl ? `Page ${p}, not planted yet${p === next ? ', next to plant' : ''}` : `Page ${p}, ${STAGES[pl.stage].name.toLowerCase()}${pl.thirst > .15 ? ', thirsty' : ''}`;
       const cell = h(`<button class="plant ${cls} ${p === next && !pl ? 'next' : ''}" data-p="${p}" aria-label="${label}">
@@ -221,7 +223,7 @@ export function viewGarden(v, ctx) {
   const draw = () => {
     const cw = wrap.clientWidth; if (!cw || Math.abs(cw - drawnW) < 40) return;
     drawnW = cw;
-    wrap.innerHTML = gardenScene({ beds, plants, next, trees, packets, width: cw < 600 ? cw * 1.12 : cw, night });
+    wrap.innerHTML = gardenScene({ beds, plants, plantIn, next, trees, packets, width: cw < 600 ? cw * 1.12 : cw, night });
   };
   draw();
   const ro = new ResizeObserver(() => { if (!wrap.isConnected) return ro.disconnect(); draw(); });
@@ -254,6 +256,7 @@ export function viewGarden(v, ctx) {
         ${pl?.stage === 'seed' ? '<button class="btn" data-a="wake">Wake this seed</button>' : '<button class="btn" data-a="loop">Open &amp; loop</button>'}
         <button class="btn ghost" data-a="open">Open page</button>
       </div></div>`);
+    if (pl?.stage !== 'seed' && ctx.pageMarkEl) body.insertBefore(ctx.pageMarkEl(p, () => { closeSheet(); viewGarden(v, ctx); }), body.querySelector('.row-btns'));
     body.querySelector('[data-a=loop]')?.addEventListener('click', () => { closeSheet(); openMushafLoop(p, p); });
     body.querySelector('[data-a=open]').onclick = () => { closeSheet(); openMushafLoop(p, p, false); };
     body.querySelector('[data-a=wake]')?.addEventListener('click', () => {
@@ -288,7 +291,7 @@ const nest = (svg, x, y, w, hgt) => svg.replace(/^<svg class="[^"]*"/, `<svg x="
 
 function rng(seed) { let s = seed >>> 0 || 1; return () => ((s = (s * 1664525 + 1013904223) >>> 0) / 4294967296); }
 
-export function gardenScene({ beds, plants, next, trees, packets, width, night }) {
+export function gardenScene({ beds, plants, plantIn, next, trees, packets, width, night }) {
   const W = Math.max(380, Math.round(width));
   const PW = 40, PH = 62;                    // one plant cell
   const PAD = 22, BED_IN = 16, SIGN_H = 34;  // spacing
@@ -381,7 +384,7 @@ export function gardenScene({ beds, plants, next, trees, packets, width, night }
     for (let i = 0; i < b.bw * b.bh / 900; i++) s += `<circle cx="${(b.x + 12 + rand() * (b.bw - 24)).toFixed(0)}" cy="${(b.y + 12 + rand() * (b.bh - 24)).toFixed(0)}" r="1.4" class="gs-crumb"/>`;
     // plants, right to left like the mushaf
     for (let k = 0; k < b.n; k++) {
-      const p = b.sp + k, pl = plants[p];
+      const p = b.sp + k, pl = plantIn(p, b.id);
       const col = k % b.cols, row = Math.floor(k / b.cols);
       const px = b.x + b.bw - BED_IN - (col + 1) * PW, py = b.y + 4 + row * PH;
       const cls = !pl ? 'empty' : pl.stage === 'seed' ? 'seed' : `${pl.stage}${pl.thirst > .15 ? ' thirsty' : ''}${pl.fresh ? ' fresh' : ''}`;

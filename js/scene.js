@@ -1,10 +1,18 @@
 // The cozy room: rain on the window, the lamp, morning/night light, and soft rain sound.
 
-export function applyTheme(setting) {
+// Two separate choices: the colors (cozy cocoa & linen, or pink) and the light (day, night, or follow the time).
+export function themeOf(st) {
+  const t = st.theme;
+  const palette = st.palette || (t === 'pink' || t === 'rose' ? 'pink' : 'cozy');
+  const light = st.light || ({ night: 'night', morning: 'day' }[t] || 'auto');
+  return { palette, light };
+}
+
+export function applyTheme(st) {
+  const { palette, light } = themeOf(st);
   const h = new Date().getHours();
-  const day = h >= 6 && h < 18;
-  if (setting === 'rose') setting = 'pink'; // older saved setting
-  const mode = setting === 'auto' ? (day ? 'morning' : 'night') : setting === 'pink' ? (day ? 'rose' : 'rosenight') : setting;
+  const day = light === 'day' || (light === 'auto' && h >= 6 && h < 18);
+  const mode = palette === 'pink' ? (day ? 'rose' : 'rosenight') : (day ? 'morning' : 'night');
   document.documentElement.dataset.mode = mode;
   const meta = document.querySelector('meta[name=theme-color]');
   if (meta) meta.content = { night: '#2a201c', morning: '#f4ebdd', rose: '#f8e6e6', rosenight: '#2b1f27' }[mode] || '#2a201c';

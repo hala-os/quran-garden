@@ -448,3 +448,10 @@ body.has-player #view { padding-bottom: 190px; }
 .listview summary { cursor: pointer; font-weight: 700; color: var(--ink2); }
 .listview .beds { margin-top: 8px; }
 @media (prefers-reduced-motion: reduce) { .gs-cloud, .gs-star, .gs-firefly, .gs-fly, .gs-wing, .gs-glow, .gs-rain line { animation: none; } }
+.mark-page { padding: 12px 0; border-top: 1px dashed var(--line); }
+.mark-page:first-child { border-top: 0; }
+.mark-page .mp-row { display: flex; gap: 12px; align-items: center; }
+.mark-page .mp-acts { margin-top: 10px; display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
+.mark-page .mp-acts .hint { margin: 0; }
+.mark-page .rate { flex-wrap: wrap; }
+@media (max-width: 480px) { .mv-bar .pg span { display: none; } .mv-bar .pg input { width: 62px; } .mv-bar .btn { padding-inline: 12px; } .mv-bar select { min-width: 0; } }

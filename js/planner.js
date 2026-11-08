@@ -146,8 +146,32 @@ export function wakeSeed(state, page, today = todayStr()) {
   if (!plan.extra.includes(page) && !plan.older.includes(page)) plan.extra.push(page);
 }
 
-export function setStatus(state, from, to, status, today = todayStr()) {
+// surahs = the surahs that appear on page p (from data.pageSurahs)
+// onlySurah: mark just that surah. On a page it shares with other surahs, only its part counts,
+// so its neighbours don't get marked by accident.
+export function setStatus(state, from, to, status, today = todayStr(), onlySurah = null, surahsOn = null) {
   for (let p = from; p <= to; p++) {
+    const on = surahsOn ? surahsOn(p) : [];
+    const shared = onlySurah && on.length > 1;
+    const cur = state.pages[p];
+    const curGrowing = cur && (cur.status === 'review' || cur.status === 'learning');
+    if (shared) {
+      if (status === 'review') {
+        if (curGrowing && !cur.only) continue; // the whole page is already memorized
+        const only = [...new Set([...(curGrowing ? cur.only : []), onlySurah])].sort((a, b) => a - b);
+        const info = curGrowing ? cur : { status: 'review', interval: 3, due: addDays(today, p % 3), ratings: [] };
+        info.only = only.length >= on.length ? undefined : only;
+        if (!info.only) delete info.only;
+        state.pages[p] = info;
+      } else if (curGrowing) {
+        const keep = (cur.only || on).filter(x => x !== onlySurah);
+        if (keep.length) cur.only = keep;
+        else if (status === 'seed') state.pages[p] = { status: 'seed' };
+        else delete state.pages[p];
+      } else if (status === 'seed') state.pages[p] = { status: 'seed' };
+      else if (cur?.status === 'seed' && status === 'none') delete state.pages[p];
+      continue;
+    }
     if (status === 'none') delete state.pages[p];
     else if (status === 'seed') state.pages[p] = { status: 'seed' };
     else if (status === 'review') state.pages[p] = { status: 'review', interval: 3, due: addDays(today, (p % 3)), ratings: [] };
