@@ -2,7 +2,7 @@ import * as store from './store.js';
 import { todayStr } from './store.js';
 import * as planner from './planner.js';
 import {
-  loadMeta, META, surah, pageLabel, pageSurahNames, pageSurahs, ar, versesForPages, vkey, pageRange, cmpVerse, tafsir, juzOfPage, loadPage,
+  loadMeta, META, surah, loadPageFont, pageLabel, pageSurahNames, pageSurahs, ar, versesForPages, vkey, pageRange, cmpVerse, tafsir, juzOfPage, loadPage,
 } from './data.js';
 import { renderPage, highlight, fit } from './mushaf.js';
 import { Player, RECITERS } from './player.js';
@@ -67,11 +67,98 @@ function route() {
   if (view === 'mushaf') { if (arg) mushafPage = clampPage(+arg); viewMushaf(); }
   else if (view === 'settings') viewSettings();
   else if (view === 'garden') showGarden();
+  else if (view === 'ayah') viewAyah(arg);
   else viewToday();
   growWindow();
   $('#view').focus({ preventScroll: true });
 }
 const clampPage = (p) => Math.max(1, Math.min(604, p || 1));
+
+// ---------- the daily ayah corner ----------
+const PROMPTS = [
+  'What is one word in this ayah that stays with you?',
+  'How could this ayah change one small thing about today?',
+  'Who would you share this ayah with, and why?',
+  'What does this ayah teach you about Allah?',
+  'Is there a dua you could make from this ayah?',
+  'What feeling does this ayah leave in your heart?',
+  'If you lived by this ayah for a week, what would be different?',
+];
+function hashStr(t) { let x = 2166136261; for (const c of t) x = Math.imul(x ^ c.charCodeAt(0), 16777619); return x >>> 0; }
+// One ayah a day, picked from the pages you're growing (or the next page to plant).
+function dailyAyah(date = todayStr()) {
+  const pool = Object.entries(S.pages).filter(([, i]) => i.status === 'learning' || i.status === 'review').map(([p]) => +p);
+  const pages = pool.length ? pool : [S.settings.nextNewPage];
+  const hsh = hashStr(date);
+  const p = pages[hsh % pages.length];
+  let vs = versesOn(p);
+  const only = S.pages[p]?.only; if (only) vs = vs.filter(v => only.includes(v[0]));
+  return { p, v: vs[(hsh >>> 8) % vs.length], prompt: PROMPTS[(hsh >>> 4) % PROMPTS.length] };
+}
+async function ayahText({ p, v }) {
+  const data = await loadPage(p);
+  const key = vkey(v);
+  const words = data.lines.flatMap(l => l.words || []).filter(w => w.location.split(':').slice(0, 2).join(':') === key);
+  return { plain: words.map(w => w.word).join(' '), glyphs: words.map(w => w.qpcV2.replace(/\s+/g, '')).join(' ') };
+}
+async function viewAyah(dateArg) {
+  const date = dateArg && /^\d{4}-\d\d-\d\d$/.test(dateArg) ? dateArg : todayStr();
+  const d = S.journal?.[date]?.ayah ? { p: S.journal[date].p, v: S.journal[date].ayah, prompt: S.journal[date].prompt } : dailyAyah(date);
+  const [s, a] = d.v;
+  const v = $('#view');
+  v.innerHTML = '';
+  v.append(h(`<section class="today ayah-corner">
+    <div class="hello"><p class="date">${new Date(date + 'T12:00').toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}</p><h1>Ayah of the day</h1></div>
+    <div class="card ayah-big">
+      <div class="ab-text" dir="rtl" id="abText">…</div>
+      <div class="ab-ref">${surah(s).ar}، الآية ${ar(a)} <span class="soft">· ${surah(s).en} ${s}:${a} · page ${d.p}</span></div>
+      <div class="row-btns center"><button class="btn ghost" id="abPlay">${playIcon()} Listen</button><button class="btn ghost" id="abLoop">${loopIcon()} Loop it</button><a class="btn ghost" href="#/mushaf/${d.p}">${bookIcon()} Open page</a></div>
+    </div>
+    <h2>Tafsir As-Sa'di <span class="ar">تفسير السعدي</span></h2>
+    <div class="card"><div class="t-body" dir="rtl" id="abTafsir">…</div></div>
+    <h2>Reflect <span class="ar">تدبّر</span></h2>
+    <div class="card reflect">
+      <p class="prompt">${d.prompt}</p>
+      <textarea id="journal" rows="5" placeholder="Write a few words, or a lot. Only you can see this."></textarea>
+      <p class="soft small" id="jSaved"></p>
+    </div>
+    <h2>Your journal <span class="ar">دفتري</span></h2>
+    <div id="jList"></div>
+  </section>`));
+  ayahText(d).then(async t => {
+    const font = await loadPageFont(d.p);
+    const el = $('#abText'); if (!el) return;
+    if (font) { el.style.fontFamily = `'${font}'`; el.textContent = t.glyphs; } else { el.textContent = t.plain; el.classList.add('plain'); }
+    el.setAttribute('aria-label', t.plain);
+  }).catch(() => { const el = $('#abText'); if (el) el.textContent = 'This ayah could not load. Check your connection.'; });
+  loadTafsir(s, a, $('#abTafsir'));
+  $('#abPlay').onclick = () => playVerses([[s, a]], { rangeRepeat: 1, ayahRepeat: 1, label: 'Ayah of the day' });
+  $('#abLoop').onclick = () => playVerses([[s, a]], { rangeRepeat: 0, ayahRepeat: 1, label: 'Ayah of the day' });
+  const ta = $('#journal');
+  S.journal ||= {};
+  ta.value = S.journal[date]?.text || '';
+  let t;
+  const save = () => {
+    const text = ta.value.trim();
+    if (text) S.journal[date] = { text, ayah: d.v, p: d.p, prompt: d.prompt };
+    else delete S.journal[date];
+    store.save(); $('#jSaved').textContent = text ? 'Saved 🌿' : ''; drawJ();
+  };
+  ta.oninput = () => { clearTimeout(t); t = setTimeout(save, 500); };
+  ta.onblur = () => { clearTimeout(t); save(); };
+  const drawJ = () => {
+    const el = $('#jList'); if (!el) return;
+    const ds = Object.keys(S.journal).filter(x => x !== date && S.journal[x]?.text).sort().reverse();
+    el.innerHTML = ds.length ? '' : '<p class="hint">Your past reflections will gather here, like pressed flowers.</p>';
+    ds.forEach(x => {
+      const j = S.journal[x]; const [js, ja] = j.ayah || [];
+      const e = h(`<a class="card j-entry" href="#/ayah/${x}"><span class="soft small">${new Date(x + 'T12:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}${js ? ` · ${surah(js).ar} ${ar(ja)}` : ''}</span><span class="j-text"></span></a>`);
+      e.querySelector('.j-text').textContent = j.text.length > 160 ? j.text.slice(0, 160) + '…' : j.text;
+      el.append(e);
+    });
+  };
+  drawJ();
+}
 
 // ---------- the weekly letter (Fridays) ----------
 function letterWaiting() {
@@ -313,6 +400,8 @@ function viewToday() {
 
       ${letterWaiting() ? `<button class="card envelope" id="openLetter"><span class="env-flap"></span><span class="env-txt"><strong>A letter from your garden</strong><span>Your week, in a few kind words. Tap to open.</span></span><span class="env-seal">🌷</span></button>` : ''}
 
+      <a class="card ayah-card" href="#/ayah"><span class="ac-k">Ayah of the day</span><span class="ac-t" id="acText">…</span><span class="ac-go">Read, reflect, write ›</span></a>
+
       <div class="card water ${met ? 'met' : ''}">
         <div class="can">${canSvg(met)}</div>
         <div>
@@ -366,6 +455,7 @@ function viewToday() {
   $('#listenAll')?.addEventListener('click', () => listenToPages(review));
   $('#wake').addEventListener('click', openWakeSheet);
   $('#tToggle').onclick = toggleTimer;
+  ayahText(dailyAyah()).then(t => { const el = $('#acText'); if (el) el.textContent = t.plain.split(' ').slice(0, 9).join(' ') + (t.plain.split(' ').length > 9 ? ' …' : ''); }).catch(() => {});
   $('#openLetter')?.addEventListener('click', () => openLetter());
 }
 

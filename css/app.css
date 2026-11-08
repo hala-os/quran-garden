@@ -561,3 +561,20 @@ body[data-view="mushaf"] .timer-btn, body[data-view="settings"] .timer-btn { wid
 .dl-list { margin-top: 10px; }
 .dl-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 8px 0; border-top: 1px dashed var(--line); }
 .dl-row b { font-family: var(--arabic); font-weight: 600; }
+
+/* ---------- daily ayah corner ---------- */
+.ayah-card { display: flex; flex-direction: column; gap: 4px; text-decoration: none; color: var(--ink); background: linear-gradient(150deg, color-mix(in srgb, var(--sage) 16%, var(--card)), var(--card)); }
+.ac-k { font-family: var(--hand); font-size: 1.35rem; color: var(--ink2); }
+.ac-t { font-family: var(--arabic); font-size: 1.25rem; direction: rtl; text-align: right; line-height: 1.9; }
+.ac-go { color: var(--accent); font-weight: 700; font-size: .92rem; }
+.ayah-big { text-align: center; background: radial-gradient(120% 90% at 50% 30%, var(--paper) 60%, var(--paper2)); color: var(--paper-ink); }
+.ab-text { font-size: clamp(26px, 7vw, 40px); line-height: 2.1; padding: 10px 4px 4px; word-spacing: .08em; }
+.ab-text.plain { font-family: var(--arabic); font-size: clamp(22px, 5.5vw, 30px); }
+.ab-ref { font-family: var(--arabic); color: #6d5238; margin: 4px 0 12px; }
+.ab-ref .soft { font-family: var(--sans); font-size: .85rem; color: #9c8673; }
+.ayah-big .btn.ghost { color: var(--paper-ink); }
+.reflect .prompt { font-family: var(--hand); font-size: 1.45rem; margin: 0 0 8px; color: var(--ink); }
+.reflect textarea { width: 100%; box-sizing: border-box; border-radius: 12px; border: 1px solid var(--line); font: inherit; padding: 12px; color: var(--ink); resize: vertical; line-height: 30px;
+  background: repeating-linear-gradient(to bottom, var(--card) 0 29px, color-mix(in srgb, var(--line) 70%, transparent) 29px 30px); background-attachment: local; }
+.j-entry { display: flex; flex-direction: column; gap: 4px; text-decoration: none; color: var(--ink); padding: 14px 16px; }
+.j-text { color: var(--ink2); line-height: 1.5; white-space: pre-wrap; }
