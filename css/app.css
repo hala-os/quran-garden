@@ -518,3 +518,27 @@ body[data-view="mushaf"] .timer-btn, body[data-view="settings"] .timer-btn { wid
 .lt-dot { width: 16px; height: 16px; border-radius: 50%; border: 2px solid #c9b08a; }
 .lt-dot.on { background: #8fb47c; border-color: #6f9460; }
 .row-btns.center { justify-content: center; }
+
+/* ---------- garden extras: seasons, bench, birds, cat (all featureless) ---------- */
+.garden-scene.season-autumn { --gs-grass1: #a9bf78; --gs-grass2: #93ab64; --gs-hill1: #c2c27e; --gs-hill2: #d6c89a; }
+.garden-scene.season-winter { --gs-grass1: #b9cfb4; --gs-grass2: #a6bea3; --gs-hill1: #dfe8e4; --gs-hill2: #edf2ee; }
+.garden-scene.season-summer { --gs-grass1: #94c773; --gs-grass2: #7db45e; }
+[data-mode*="night"] .garden-scene.season-autumn { --gs-grass1: #3d4c33; --gs-grass2: #333f2b; --gs-hill1: #43482f; }
+[data-mode*="night"] .garden-scene.season-winter { --gs-grass1: #3b4a48; --gs-grass2: #33403f; --gs-hill1: #4d5a62; --gs-hill2: #3c4651; }
+.gs-fall { animation: fall linear infinite; }
+@keyframes fall { from { transform: translate(0, 0) rotate(0); } to { transform: translate(var(--fx, 20px), var(--fh, 900px)) rotate(400deg); } }
+.gs-snow { fill: #fff; opacity: .9; } .gs-petal { fill: #f7c6d0; opacity: .9; }
+.gs-bird { animation: hop 4s ease-in-out infinite; }
+@keyframes hop { 0%, 70%, 100% { transform: translateY(0); } 76% { transform: translateY(-7px); } 82% { transform: translateY(0); } 88% { transform: translateY(-4px); } 94% { transform: translateY(0); } }
+.gs-bird-body { fill: #b97c6a; } .gs-bird-wing { fill: #8f5a4b; }
+[data-mode*="rose"] .gs-bird-body { fill: #d98f9e; } [data-mode*="rose"] .gs-bird-wing { fill: #b56c7c; }
+[data-mode*="night"] .gs-bird-body { fill: #7a5d55; } [data-mode*="night"] .gs-bird-wing { fill: #5d443d; }
+.gs-cat-body { fill: #e9a96b; } .gs-cat-tail { stroke: #e9a96b; stroke-width: 6; stroke-linecap: round; fill: none; }
+[data-mode*="night"] .gs-cat-body { fill: #b98457; } [data-mode*="night"] .gs-cat-tail { stroke: #b98457; }
+.gs-cat { transform-box: fill-box; transform-origin: 50% 100%; animation: breathe 3.6s ease-in-out infinite; }
+@keyframes breathe { 0%, 100% { transform: scaleY(1); } 50% { transform: scaleY(1.05); } }
+.gs-zz { font-family: var(--hand); font-size: 16px; fill: var(--soft); animation: zz 3.6s ease-in-out infinite; }
+.gs-zz.z2 { font-size: 12px; animation-delay: 1.2s; }
+@keyframes zz { 0%, 100% { opacity: 0; transform: translateY(4px); } 50% { opacity: .9; transform: translateY(-4px); } }
+.g-unlock { margin: .4rem 0 .2rem; }
+@media (prefers-reduced-motion: reduce) { .gs-fall, .gs-bird, .gs-cat, .gs-zz { animation: none; } .gs-fall { display: none; } }

@@ -1,6 +1,7 @@
 // The memorization garden: one plant per memorized page, a bed per surah.
 // Plants grow with each page's strength, droop a little when they're thirsty, and never die.
 import { todayStr, daysBetween } from './store.js';
+import { minimumMet } from './planner.js';
 import { META, surah, pageLabel, juzOfPage, ar } from './data.js';
 
 const PETALS = ['#f3a6b5', '#f7c59f', '#c9b3e6', '#f4dc7e', '#f9d4dc', '#f19c8c', '#b9d4ee', '#e9b8d8'];
@@ -166,6 +167,7 @@ export function viewGarden(v, ctx) {
         <p class="date">بستاني</p>
         <h1>Your garden</h1>
         <p class="lead">${lead}</p>
+        <p class="soft small g-unlock" id="gUnlock"></p>
         <button class="link" id="gLetter">💌 This week's letter</button>
       </div>
       <div class="g-stats">
@@ -218,6 +220,10 @@ export function viewGarden(v, ctx) {
   if (!beds.length) bedsEl.append(h(`<div class="card soft-card"><p>No beds yet. Your first page will make one.</p></div>`));
 
   // the illustrated garden, redrawn when the screen width changes a lot
+  const extras = gardenExtras(S, today);
+  root.querySelector('#gUnlock').textContent = extras.next
+    ? `${extras.next.in} more watered day${extras.next.in === 1 ? '' : 's'} until ${extras.next.what} appears ✨`
+    : extras.cat ? 'The cat is napping on the bench today 🐾' : 'The cat naps on the bench on days your garden is watered.';
   root.querySelector('#gLetter').onclick = () => ctx.openLetter?.();
   const wrap = root.querySelector('#gscene');
   const night = /night/.test(document.documentElement.dataset.mode || '');
@@ -225,7 +231,7 @@ export function viewGarden(v, ctx) {
   const draw = () => {
     const cw = wrap.clientWidth; if (!cw || Math.abs(cw - drawnW) < 40) return;
     drawnW = cw;
-    wrap.innerHTML = gardenScene({ beds, plants, plantIn, next, trees, packets, width: cw < 600 ? cw * 1.12 : cw, night });
+    wrap.innerHTML = gardenScene({ beds, plants, plantIn, next, trees, packets, width: cw < 600 ? cw * 1.12 : cw, night, extras });
   };
   draw();
   const ro = new ResizeObserver(() => { if (!wrap.isConnected) return ro.disconnect(); draw(); });
@@ -270,6 +276,20 @@ export function viewGarden(v, ctx) {
 
 function pageSurah(p) { return primarySurah(p); }
 
+// Little surprises the garden unlocks as you keep showing up (counted in watered days, never streaks).
+export const UNLOCKS = [[3, 'bench', 'a garden bench'], [7, 'birds', 'little birds on the fence'], [10, 'cat', 'a sleepy cat that naps on the bench on watered days']];
+export function gardenExtras(S, today = todayStr()) {
+  const m = +today.slice(5, 7);
+  const season = m === 12 || m <= 2 ? 'winter' : m <= 5 ? 'spring' : m <= 8 ? 'summer' : 'autumn';
+  const days = Object.keys(S.days).filter(d => minimumMet(S, d)).length;
+  const x = { season, days };
+  for (const [n, k] of UNLOCKS) x[k] = days >= n;
+  x.cat = x.cat && minimumMet(S, today);
+  const next = UNLOCKS.find(([n]) => days < n);
+  x.next = next ? { in: next[0] - days, what: next[2] } : null;
+  return x;
+}
+
 // The surah a page mostly belongs to: the last surah that starts on it, else the one it opens in.
 function primarySurah(p) {
   if (!p || p > 604) return 0;
@@ -293,7 +313,7 @@ const nest = (svg, x, y, w, hgt) => svg.replace(/^<svg class="[^"]*"/, `<svg x="
 
 function rng(seed) { let s = seed >>> 0 || 1; return () => ((s = (s * 1664525 + 1013904223) >>> 0) / 4294967296); }
 
-export function gardenScene({ beds, plants, plantIn, next, trees, packets, width, night }) {
+export function gardenScene({ beds, plants, plantIn, next, trees, packets, width, night, extras = {} }) {
   const W = Math.max(380, Math.round(width));
   const PW = 40, PH = 62;                    // one plant cell
   const PAD = 22, BED_IN = 16, SIGN_H = 34;  // spacing
@@ -314,10 +334,11 @@ export function gardenScene({ beds, plants, plantIn, next, trees, packets, width
     x += bw + 26; rowH = Math.max(rowH, bh + SIGN_H);
   }
   let bottom = y + rowH + 30;
-  const tableY = bottom + 10;
+  const restY = bottom;                      // a little resting corner with the bench
+  const tableY = bottom + (extras.bench ? 96 : 10);
   const H = tableY + (packets.length ? 150 : 90);
 
-  let s = `<svg class="garden-scene" viewBox="0 0 ${W} ${H}" role="group" aria-label="Your garden">
+  let s = `<svg class="garden-scene season-${extras.season || 'spring'}" viewBox="0 0 ${W} ${H}" role="group" aria-label="Your garden">
   <defs>
     <linearGradient id="gsky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" class="gs-sky1"/><stop offset="1" class="gs-sky2"/></linearGradient>
     <linearGradient id="ggrass" x1="0" y1="0" x2="0" y2="1"><stop offset="0" class="gs-grass1"/><stop offset="1" class="gs-grass2"/></linearGradient>
@@ -352,6 +373,14 @@ export function gardenScene({ beds, plants, plantIn, next, trees, packets, width
   s += `<g class="gs-fence"><rect x="0" y="${FENCE_Y - 10}" width="${W}" height="5" rx="2"/><rect x="0" y="${FENCE_Y + 6}" width="${W}" height="5" rx="2"/>`;
   for (let fx = 10; fx < W; fx += 34) s += `<path d="M${fx} ${FENCE_Y + 24} v-38 l6 -7 l6 7 v38z"/>`;
   s += `</g>`;
+  // featureless little birds hopping on the fence
+  if (extras.birds) {
+    for (const [bx, d] of [[W * .26, 0], [W * .4, -1.3], [W * .74, -2.4]]) {
+      s += `<g class="gs-bird" style="animation-delay:${d}s"><g transform="translate(${bx.toFixed(0)} ${FENCE_Y - 18})">
+        <path d="M-9 4 q0 -11 9 -11 q8 0 9 7 l7 -2 l-6 6 q-2 6 -10 6 h-6 q-3 0 -3 -6z" class="gs-bird-body"/>
+        <path d="M-3 -1 q5 -3 10 1 q-5 5 -10 -1z" class="gs-bird-wing"/></g></g>`;
+    }
+  }
   // little grass tufts and flowers scattered on the lawn
   for (let i = 0; i < Math.round(W * H / 9000); i++) {
     const gx = rand() * W, gy = FENCE_Y + 30 + rand() * (H - FENCE_Y - 40);
@@ -416,6 +445,32 @@ export function gardenScene({ beds, plants, plantIn, next, trees, packets, width
   const cx = W - PAD - 70, cy = ty + (packets.length ? 96 : 40);
   s += `<ellipse cx="${cx}" cy="${cy}" rx="62" ry="22" class="gs-pond"/><ellipse cx="${cx - 18}" cy="${cy - 4}" rx="11" ry="5" class="gs-lily"/><circle cx="${cx + 20}" cy="${cy + 3}" r="3.5" class="gs-lilyf"/>
     <path d="M${cx - 30} ${cy + 8} q24 -6 48 0" class="gs-ripple"/>`;
+  // the resting corner: a bench, and on watered days a sleepy cat curled up on it
+  if (extras.bench) {
+    const bx = Math.round(W / 2 - 60), by = restY + 30;
+    s += `<g class="gs-bench"><rect x="${bx}" y="${by}" width="120" height="9" rx="3" class="gs-wood"/><rect x="${bx}" y="${by - 26}" width="120" height="8" rx="3" class="gs-wood"/><rect x="${bx}" y="${by - 14}" width="120" height="7" rx="3" class="gs-wood"/>
+      <path d="M${bx + 10} ${by + 9} v24 M${bx + 110} ${by + 9} v24" class="gs-leg"/></g>`;
+    if (extras.cat) {
+      const cx = bx + 66, cy = by - 1;
+      s += `<g class="gs-cat"><title>A sleepy cat. It visits on days your garden is watered.</title>
+        <path d="M${cx - 30} ${cy} q-2 -20 22 -22 q22 -1 26 16 q1 6 -4 6z" class="gs-cat-body"/>
+        <circle cx="${cx + 14}" cy="${cy - 9}" r="9.5" class="gs-cat-body"/>
+        <path d="M${cx + 7} ${cy - 15} l1 -9 l6 6z M${cx + 16} ${cy - 18} l5 -7 l2 9z" class="gs-cat-body"/>
+        <path d="M${cx - 29} ${cy - 2} q-12 -2 -8 -12" class="gs-cat-tail"/></g>
+        <text x="${cx + 30}" y="${cy - 26}" class="gs-zz">z</text><text x="${cx + 38}" y="${cy - 36}" class="gs-zz z2">z</text>`;
+    }
+  }
+  // the season drifting through the air
+  const fall = { autumn: 'leaf', winter: 'snow', spring: 'petal' }[extras.season];
+  if (fall) {
+    for (let i = 0; i < 12; i++) {
+      const fx = (rand() * W).toFixed(0), d = (rand() * -14).toFixed(1), dur = (10 + rand() * 8).toFixed(1);
+      s += `<g class="gs-fall" style="animation-delay:${d}s;animation-duration:${dur}s;--fx:${(rand() * 60 - 30).toFixed(0)}px;--fh:${H}px"><g transform="translate(${fx} -10)">${
+        fall === 'snow' ? '<circle r="2.6" class="gs-snow"/>'
+        : fall === 'leaf' ? `<path d="M0 -5 q5 2 0 10 q-5 -8 0 -10z" class="gs-leafy" style="fill:${['#d98b4a', '#c7643c', '#e0b04f'][i % 3]}"/>`
+        : `<ellipse rx="3.2" ry="2" class="gs-petal"/>`}</g></g>`;
+    }
+  }
   // fireflies at night, butterflies by day
   for (let i = 0; i < 6; i++) {
     const bx = (rand() * (W - 60) + 30).toFixed(0), by = (FENCE_Y + 40 + rand() * (H - FENCE_Y - 80)).toFixed(0), d = (rand() * -8).toFixed(1);
