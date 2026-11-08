@@ -166,6 +166,7 @@ export function viewGarden(v, ctx) {
         <p class="date">بستاني</p>
         <h1>Your garden</h1>
         <p class="lead">${lead}</p>
+        <button class="link" id="gLetter">💌 This week's letter</button>
       </div>
       <div class="g-stats">
         <span class="g-stat"><b>${bloom}</b> blooming</span>
@@ -217,6 +218,7 @@ export function viewGarden(v, ctx) {
   if (!beds.length) bedsEl.append(h(`<div class="card soft-card"><p>No beds yet. Your first page will make one.</p></div>`));
 
   // the illustrated garden, redrawn when the screen width changes a lot
+  root.querySelector('#gLetter').onclick = () => ctx.openLetter?.();
   const wrap = root.querySelector('#gscene');
   const night = /night/.test(document.documentElement.dataset.mode || '');
   let drawnW = 0;

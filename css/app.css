@@ -495,3 +495,24 @@ body[data-view="mushaf"] .timer-btn, body[data-view="settings"] .timer-btn { wid
 .note-item b { font-family: var(--arabic); font-weight: 600; }
 .note-chip { display: block; margin: 8px 0 2px; font-size: .9rem; }
 .mark-page .chip { white-space: nowrap; border-radius: 999px; }
+
+/* ---------- weekly letter ---------- */
+.envelope { display: flex; align-items: center; gap: 14px; width: 100%; text-align: left; cursor: pointer; font: inherit; color: var(--ink); overflow: hidden;
+  background: linear-gradient(160deg, color-mix(in srgb, var(--rose) 18%, var(--card)), var(--card)); }
+.env-flap { flex: none; width: 54px; height: 38px; border-radius: 6px; background: #f6ead6; position: relative; box-shadow: 0 2px 6px rgba(0,0,0,.15); }
+.env-flap::before { content: ''; position: absolute; inset: 0; background: linear-gradient(to bottom right, transparent 49%, #e2cfae 50%, transparent 52%), linear-gradient(to bottom left, transparent 49%, #e2cfae 50%, transparent 52%); background-size: 50% 100%; background-repeat: no-repeat; background-position: left, right; }
+.env-txt { display: flex; flex-direction: column; flex: 1; }
+.env-txt strong { font-family: var(--hand); font-size: 1.45rem; }
+.env-txt span { color: var(--ink2); font-size: .92rem; }
+.env-seal { font-size: 1.6rem; animation: twinkle 3s ease-in-out infinite; }
+.letter { position: relative; margin: 44px 0 12px; padding: 22px 22px 18px; border-radius: 8px; color: #4a3527;
+  background: repeating-linear-gradient(to bottom, #fbf4e6 0 29px, #eadbc2 29px 30px); box-shadow: 0 6px 18px rgba(60, 35, 15, .18); font-size: 1.02rem; line-height: 30px; }
+.letter p { margin: 0 0 0; }
+.lt-stamp { position: absolute; top: 18px; right: 18px; width: 40px; height: 46px; display: grid; place-items: center; font-size: 1.4rem; background: #fff; border: 2px dashed #e5a8b3; transform: rotate(6deg); line-height: 1; }
+.lt-date { font-family: var(--hand); font-size: 1.2rem; color: #8a6a50; }
+.lt-hi, .lt-sign { font-family: var(--hand); font-size: 1.55rem; }
+.lt-sign { margin-top: 8px !important; line-height: 1.3; }
+.lt-week { display: flex; gap: 8px; margin: 10px 0 4px; }
+.lt-dot { width: 16px; height: 16px; border-radius: 50%; border: 2px solid #c9b08a; }
+.lt-dot.on { background: #8fb47c; border-color: #6f9460; }
+.row-btns.center { justify-content: center; }

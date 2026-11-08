@@ -8,6 +8,7 @@ import { renderPage, highlight, fit } from './mushaf.js';
 import { Player, RECITERS } from './player.js';
 import { applyTheme, themeOf, startRain, fireSound } from './scene.js';
 import { viewGarden, windowLevel } from './garden.js';
+import { letterWeek, letterHtml } from './letter.js';
 import { popOut, closePopout, refreshPopout, canPopOut } from './popout.js';
 
 const $ = (s, r = document) => r.querySelector(s);
@@ -68,6 +69,22 @@ function route() {
   $('#view').focus({ preventScroll: true });
 }
 const clampPage = (p) => Math.max(1, Math.min(604, p || 1));
+
+// ---------- the weekly letter (Fridays) ----------
+function letterWaiting() {
+  const today = todayStr(), wk = letterWeek(today);
+  // first letter only after a few days of using Bustan, so it has something to say
+  if ((S.createdOn || today) > addDaysStr(wk, -3)) return false;
+  return !(S.letters || {})[wk];
+}
+function addDaysStr(d, n) { return store.addDays(d, n); }
+function openLetter(wk = letterWeek()) {
+  S.letters ||= {}; S.letters[wk] = true; store.save();
+  const body = h(`<div>${letterHtml(S, wk)}<div class="row-btns center"><button class="btn ghost" data-a="prev">Last week's letter</button></div></div>`);
+  body.querySelector('[data-a=prev]').onclick = () => { closeSheet(); openLetter(store.addDays(wk, -7)); };
+  openSheet(body);
+  if (currentView === 'today') setTimeout(() => $('#openLetter')?.remove(), 300);
+}
 
 // ---------- timer: time spent reciting / memorizing, plus listening ----------
 const timerOn = () => !!S.timer?.start;
@@ -238,7 +255,7 @@ function pageMarkEl(p, refresh) {
 
 // ---------- Garden ----------
 function showGarden() {
-  viewGarden($('#view'), { S, h, openSheet, closeSheet, toast, openMushafLoop, openWakeSheet, store, planner, pageMarkEl });
+  viewGarden($('#view'), { S, h, openSheet, closeSheet, toast, openMushafLoop, openWakeSheet, store, planner, pageMarkEl, openLetter });
 }
 // the little flowers in the window grow with the garden
 function growWindow() { $('#scene').dataset.g = windowLevel(S); }
@@ -284,6 +301,8 @@ function viewToday() {
         <p class="lead">${REASONS[plan.reason] || REASONS.normal}</p>
         ${plan.reason === 'gentle' && !plan.newPages.length ? `<button class="link" id="addNew">Add a new page anyway</button>` : ''}
       </div>
+
+      ${letterWaiting() ? `<button class="card envelope" id="openLetter"><span class="env-flap"></span><span class="env-txt"><strong>A letter from your garden</strong><span>Your week, in a few kind words. Tap to open.</span></span><span class="env-seal">🌷</span></button>` : ''}
 
       <div class="card water ${met ? 'met' : ''}">
         <div class="can">${canSvg(met)}</div>
@@ -338,6 +357,7 @@ function viewToday() {
   $('#listenAll')?.addEventListener('click', () => listenToPages(review));
   $('#wake').addEventListener('click', openWakeSheet);
   $('#tToggle').onclick = toggleTimer;
+  $('#openLetter')?.addEventListener('click', () => openLetter());
 }
 
 function countsLine() {
