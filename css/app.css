@@ -542,3 +542,17 @@ body[data-view="mushaf"] .timer-btn, body[data-view="settings"] .timer-btn { wid
 @keyframes zz { 0%, 100% { opacity: 0; transform: translateY(4px); } 50% { opacity: .9; transform: translateY(-4px); } }
 .g-unlock { margin: .4rem 0 .2rem; }
 @media (prefers-reduced-motion: reduce) { .gs-fall, .gs-bird, .gs-cat, .gs-zz { animation: none; } .gs-fall { display: none; } }
+
+/* ---------- searchable surah picker ---------- */
+.pick-btn { display: inline-flex; align-items: center; justify-content: space-between; gap: 8px; min-width: 0; max-width: 260px; flex: 1; padding: 10px 12px; border-radius: 14px; border: 1px solid var(--line); background: var(--card); color: var(--ink); font: inherit; cursor: pointer; text-align: start; }
+.pick-btn span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pick-btn svg { width: 16px; height: 16px; flex: none; color: var(--soft); }
+.note-like .pick-btn { max-width: 190px; padding: 7px 10px; }
+.pick-panel { position: fixed; z-index: 200; background: var(--card); border: 1px solid var(--line); border-radius: 16px; box-shadow: 0 14px 40px rgba(20, 10, 5, .28); padding: 8px; display: flex; flex-direction: column; gap: 6px; max-height: min(380px, 60vh); }
+.pick-panel input { width: 100%; box-sizing: border-box; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--line); background: var(--bg2); color: var(--ink); font: inherit; }
+.pick-list { overflow-y: auto; overscroll-behavior: contain; }
+.pick-item { padding: 9px 10px; border-radius: 10px; cursor: pointer; color: var(--ink); }
+.pick-item:hover, .pick-item.act { background: color-mix(in srgb, var(--accent) 16%, transparent); }
+.pick-item.on { font-weight: 700; color: var(--accent); }
+.pick-none { padding: 12px; color: var(--soft); text-align: center; }
+.mv-bar .pick-btn { min-width: 140px; }

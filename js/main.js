@@ -9,6 +9,7 @@ import { Player, RECITERS } from './player.js';
 import { applyTheme, themeOf, startRain, fireSound } from './scene.js';
 import { viewGarden, windowLevel } from './garden.js';
 import { letterWeek, letterHtml } from './letter.js';
+import { enhanceSelects } from './picker.js';
 import { popOut, closePopout, refreshPopout, canPopOut } from './popout.js';
 
 const $ = (s, r = document) => r.querySelector(s);
@@ -42,6 +43,7 @@ let mushafPage = 106;
   syncSound();
   sb.addEventListener('click', () => { S.settings.fire = !S.settings.fire; fireSound(S.settings.fire); store.save(); syncSound(); if (currentView === 'settings') viewSettings(); });
   setupPlayerBar();
+  new MutationObserver(() => enhanceSelects($('#view'))).observe($('#view'), { childList: true, subtree: true });
   $('#timerBtn').onclick = toggleTimer;
   setInterval(paintTimer, 1000); paintTimer();
   route();
@@ -480,7 +482,7 @@ function viewMushaf() {
   v.append(h(`
     <section class="mushaf-view">
       <div class="mv-bar">
-        <select id="surahSel" aria-label="Go to surah">${surahOpts}</select>
+        <select id="surahSel" data-search aria-label="Go to surah">${surahOpts}</select>
         <label class="pg"><span>Page</span><input id="pgInput" type="number" min="1" max="604" inputmode="numeric"></label>
         <button class="btn ghost" id="testBtn" aria-pressed="false">${testIcon()}<span class="lbl"> Test</span></button>
         <button class="btn ghost" id="markBtn">${seedIcon()}<span class="lbl"> Mark</span></button>
@@ -567,10 +569,13 @@ async function drawSpread() {
   book.classList.toggle('double', ps.length > 1);
   book.innerHTML = '';
   $('#pgInput').value = mushafPage;
-  const s = pageRange(ps[0]).from[0];
+  // name the surah that begins on this page if there is one, else the one it opens in
+  const starts = ps.flatMap(pageSurahs).filter(x => ps.includes(surah(x).start));
+  const s = starts.length ? starts[0] : pageRange(ps[0]).from[0];
   const sel = $('#surahSel');
   sel.value = String(surah(s).start);
   if (sel.value !== String(surah(s).start)) sel.selectedIndex = s - 1;
+  sel._sync?.();
   const els = ps.map(p => { const el = document.createElement('article'); book.appendChild(el); return [p, el]; });
   // Right page first in reading order (RTL): CSS uses row-reverse for the spread.
   await Promise.all(els.map(([p, el]) => renderPage(el, p, { onVerse: (k) => openAyahSheet(k) })));
@@ -685,6 +690,7 @@ function openSheet(content) {
   const close = h('<button class="icon-btn close" aria-label="Close"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button>');
   close.onclick = closeSheet;
   sh.append(close, content);
+  enhanceSelects(sh);
   sh.hidden = false; $('#backdrop').hidden = false;
   requestAnimationFrame(() => sh.classList.add('open'));
 }
@@ -712,7 +718,7 @@ function openAyahSheet(key) {
       <div class="t-head">My note <span class="soft small">· mix-ups, reminders, anything</span></div>
       <textarea id="noteText" rows="2" placeholder="e.g. don't mix up with the ayah in Al-Baqarah that ends differently"></textarea>
       <div class="note-like"><span class="soft small">Similar ayah</span>
-        <select id="likeS"><option value="">none</option>${META.surahs.map(x => `<option value="${x[0]}">${x[0]}. ${x[1]}</option>`).join('')}</select>
+        <select id="likeS" data-search aria-label="Similar ayah surah"><option value="">none</option>${META.surahs.map(x => `<option value="${x[0]}">${x[0]}. ${x[1]}</option>`).join('')}</select>
         <input id="likeA" type="number" min="1" placeholder="ayah" inputmode="numeric">
         <button class="btn ghost small" id="likeGo" hidden>Go there</button>
       </div>
@@ -835,7 +841,7 @@ function viewSettings() {
     <div class="card">
       <h3>My pages</h3>
       <p class="hint">${countsLine()}. Mark pages as memorized (they join review), sleeping seeds, or not memorized.</p>
-      <label class="line">Surah <select id="msSurah"><option value="">Choose a surah…</option>${META.surahs.map(x => `<option value="${x[0]}">${x[0]}. ${x[1]} · ${x[2]}</option>`).join('')}</select></label>
+      <label class="line">Surah <select id="msSurah" data-search aria-label="Surah"><option value="">Choose a surah…</option>${META.surahs.map(x => `<option value="${x[0]}">${x[0]}. ${x[1]} · ${x[2]}</option>`).join('')}</select></label>
       <div class="two">
         <label>From page <input id="msFrom" type="number" min="1" max="604" value="1"></label>
         <label>To page <input id="msTo" type="number" min="1" max="604" value="1"></label>
