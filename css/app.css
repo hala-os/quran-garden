@@ -455,3 +455,14 @@ body.has-player #view { padding-bottom: 190px; }
 .mark-page .mp-acts .hint { margin: 0; }
 .mark-page .rate { flex-wrap: wrap; }
 @media (max-width: 480px) { .mv-bar .pg span { display: none; } .mv-bar .pg input { width: 62px; } .mv-bar .btn { padding-inline: 12px; } .mv-bar select { min-width: 0; } }
+
+/* ---------- timer ---------- */
+.timer-btn { right: auto; left: 12px; width: auto; min-width: 40px; padding: 0 10px; border-radius: 999px; gap: 6px; display: flex; align-items: center; justify-content: center; font: 700 .9rem var(--sans); }
+.timer-btn svg { width: 19px; height: 19px; }
+.timer-btn span:empty { display: none; }
+.timer-btn[aria-pressed="true"] { color: var(--on-accent); background: var(--accent); border-color: var(--accent-d); box-shadow: 0 0 14px color-mix(in srgb, var(--accent) 50%, transparent); }
+body[data-view="mushaf"] .timer-btn, body[data-view="settings"] .timer-btn { width: auto; }
+.time-card { display: flex; align-items: center; gap: 14px; justify-content: space-between; flex-wrap: wrap; }
+.time-card strong { font-family: var(--hand); font-size: 1.45rem; }
+.time-card .big { font-family: var(--serif); font-size: 1.6rem; }
+.time-card p { margin: .2rem 0 0; color: var(--ink2); font-size: .9rem; }

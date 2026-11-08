@@ -41,6 +41,8 @@ let mushafPage = 106;
   syncSound();
   sb.addEventListener('click', () => { S.settings.fire = !S.settings.fire; fireSound(S.settings.fire); store.save(); syncSound(); if (currentView === 'settings') viewSettings(); });
   setupPlayerBar();
+  $('#timerBtn').onclick = toggleTimer;
+  setInterval(paintTimer, 1000); paintTimer();
   route();
   if ('serviceWorker' in navigator && location.protocol === 'https:') {
     navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then(r => r.update()).catch(() => {});
@@ -66,6 +68,38 @@ function route() {
   $('#view').focus({ preventScroll: true });
 }
 const clampPage = (p) => Math.max(1, Math.min(604, p || 1));
+
+// ---------- timer: time spent reciting / memorizing, plus listening ----------
+const timerOn = () => !!S.timer?.start;
+function timerRun() { return timerOn() ? Math.max(0, Math.round((Date.now() - S.timer.start) / 1000)) : 0; }
+function timeToday() { const d = S.days[todayStr()] || {}; return (d.focusSec || 0) + (d.listenedSec || 0) + timerRun(); }
+const fmtMin = (sec) => sec < 3600 ? `${Math.floor(sec / 60)} min` : `${Math.floor(sec / 3600)} h ${Math.floor(sec / 60) % 60} min`;
+function splitLine() {
+  const d = S.days[todayStr()] || {};
+  return `${fmtMin((d.focusSec || 0) + timerRun())} reciting &amp; memorizing · ${fmtMin(d.listenedSec || 0)} listening`;
+}
+function toggleTimer() {
+  if (timerOn()) {
+    const sec = timerRun();
+    const d = planner.dayOf(S, todayStr());
+    d.focusSec = (d.focusSec || 0) + Math.min(sec, 6 * 3600);
+    S.timer = null; store.save();
+    toast(`${fmtMin(sec)} with the Quran. بارك الله فيك`);
+  } else {
+    S.timer = { start: Date.now() }; store.save();
+    toast('Timer started. Take your time 🌿');
+  }
+  paintTimer();
+  if (currentView === 'today') viewToday();
+}
+function paintTimer() {
+  const b = $('#timerBtn'); if (!b) return;
+  const on = timerOn(), t = timerRun();
+  b.setAttribute('aria-pressed', on ? 'true' : 'false');
+  b.setAttribute('aria-label', on ? 'Stop the timer' : 'Start the timer');
+  $('#timerTxt').textContent = on ? `${Math.floor(t / 60)}:${String(t % 60).padStart(2, '0')}` : '';
+  if (currentView === 'today' && $('#tToday')) { $('#tToday').textContent = fmtMin(timeToday()); $('#tSplit').innerHTML = splitLine(); }
+}
 
 // ---------- quick marking: memorized / reviewed, right from a page ----------
 function openMarkSheet(ps) {
@@ -184,9 +218,16 @@ function viewToday() {
         <div class="can">${canSvg(met)}</div>
         <div>
           <strong>${met ? 'Your garden is watered today' : "Today's minimum"}</strong>
-          <p>${met ? 'Anything more is a gift. Rest whenever you like.' : 'Just 1 page of review, or 10 minutes of listening.'}</p>
-          <p class="soft">Watered ${watered} of the last 30 days · listened ${Math.round((d.listenedSec || 0) / 60)} min today</p>
+          <p>${met ? 'Anything more is a gift. Rest whenever you like.' : 'Just 1 page of review, or 10 minutes of reciting or listening.'}</p>
+          <p class="soft">Watered ${watered} of the last 30 days</p>
         </div>
+      </div>
+
+      <div class="card time-card">
+        <div><strong>Time with the Quran today</strong>
+          <p><span class="big" id="tToday">${fmtMin(timeToday())}</span></p>
+          <p id="tSplit">${splitLine()}</p></div>
+        <button class="btn ${timerOn() ? '' : 'ghost'}" id="tToggle">${timerOn() ? 'Stop the timer' : 'Start the timer'}</button>
       </div>
 
       ${plan.newPages.length ? `
@@ -225,6 +266,7 @@ function viewToday() {
   });
   $('#listenAll')?.addEventListener('click', () => listenToPages(review));
   $('#wake').addEventListener('click', openWakeSheet);
+  $('#tToggle').onclick = toggleTimer;
 }
 
 function countsLine() {

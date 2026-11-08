@@ -195,7 +195,7 @@ export function dayOf(state, date) {
 export function minimumMet(state, date = todayStr()) {
   const d = state.days[date];
   if (!d) return false;
-  return Object.keys(d.reviewed).length >= MIN_PAGES || d.learned.length > 0 || d.listenedSec >= MIN_LISTEN_SEC;
+  return Object.keys(d.reviewed).length >= MIN_PAGES || d.learned.length > 0 || (d.listenedSec || 0) + (d.focusSec || 0) >= MIN_LISTEN_SEC;
 }
 
 export function wateredDays(state, today = todayStr(), span = 30) {
