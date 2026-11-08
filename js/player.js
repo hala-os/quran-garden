@@ -3,6 +3,7 @@
 //  - "timed": one recording per surah plus per-ayah timings (mp3quran.net)
 //  - "ayah":  one file per ayah (everyayah.com)
 import { surah } from './data.js';
+import { localUrl } from './offline.js';
 
 const pad3 = (n) => String(n).padStart(3, '0');
 
@@ -86,7 +87,10 @@ export class Player {
     try {
       if (ss.rec.kind === 'ayah') {
         delete this.audio.dataset.src;
-        this.audio.src = ss.rec.audio(v[0], v[1]);
+        const url = ss.rec.audio(v[0], v[1]);
+        const local = await localUrl(url);
+        if (token !== ss.token || this.session !== ss) return;
+        this.audio.src = local || url;
         this.audio.playbackRate = ss.speed || 1;
         await this.audio.play();
       } else {
@@ -98,7 +102,9 @@ export class Player {
         ss.end = end;
         const src = ss.rec.audio(v[0]);
         if (this.audio.dataset.src !== src) {
-          this.audio.src = src;
+          const local = await localUrl(src); // a downloaded copy plays offline
+          if (token !== ss.token || this.session !== ss) return;
+          this.audio.src = local || src;
           this.audio.dataset.src = src;
         }
         if (this.audio.readyState < 1) {

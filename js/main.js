@@ -10,6 +10,7 @@ import { applyTheme, themeOf, startRain, fireSound } from './scene.js';
 import { viewGarden, windowLevel } from './garden.js';
 import { letterWeek, letterHtml } from './letter.js';
 import { enhanceSelects } from './picker.js';
+import { download, downloaded, removeDownload } from './offline.js';
 import { popOut, closePopout, refreshPopout, canPopOut } from './popout.js';
 
 const $ = (s, r = document) => r.querySelector(s);
@@ -839,6 +840,17 @@ function viewSettings() {
     </div>
 
     <div class="card">
+      <h3>Offline recitations</h3>
+      <p class="hint">Download a surah once and it plays with no internet. It uses the reciter chosen above.</p>
+      <div class="two">
+        <label class="line">Surah <select id="dlSurah" data-search aria-label="Surah to download">${META.surahs.map(x => `<option value="${x[0]}" ${x[0] === (pageSurahs(S.settings.nextNewPage).filter(y => surah(y).start === S.settings.nextNewPage).pop() || pageRange(S.settings.nextNewPage).from[0]) ? 'selected' : ''}>${x[0]}. ${x[1]} · ${x[2]}</option>`).join('')}</select></label>
+        <button class="btn" id="dlGo" type="button">Download</button>
+      </div>
+      <div class="dl-bar" id="dlBar" hidden><i></i></div>
+      <div class="dl-list" id="dlList"></div>
+    </div>
+
+    <div class="card">
       <h3>My pages</h3>
       <p class="hint">${countsLine()}. Mark pages as memorized (they join review), sleeping seeds, or not memorized.</p>
       <label class="line">Surah <select id="msSurah" data-search aria-label="Surah"><option value="">Choose a surah…</option>${META.surahs.map(x => `<option value="${x[0]}">${x[0]}. ${x[1]} · ${x[2]}</option>`).join('')}</select></label>
@@ -889,6 +901,30 @@ function viewSettings() {
     store.save();
     toast(only ? `${surah(only).en} updated` : `Pages ${Math.min(a, b)}–${Math.max(a, b)} updated`);
     viewSettings();
+  };
+  const drawDl = async () => {
+    const d = await downloaded(); const el = $('#dlList'); if (!el) return;
+    const ks = Object.keys(d).sort((a, b) => +a.split(':')[1] - +b.split(':')[1]);
+    el.innerHTML = ks.length ? '' : '<p class="soft small">Nothing downloaded yet.</p>';
+    ks.forEach(k => {
+      const [r, sid] = k.split(':');
+      const row = h(`<div class="dl-row"><span><b>${surah(+sid).ar}</b> · ${surah(+sid).en} <span class="soft small">· ${RECITERS[r]?.en || r}${d[k] ? ` · ${(d[k] / 1048576).toFixed(1)} MB` : ''}</span></span><button class="link" type="button">Remove</button></div>`);
+      row.querySelector('button').onclick = async () => { await removeDownload(r, +sid); toast('Removed'); drawDl(); };
+      el.append(row);
+    });
+  };
+  drawDl();
+  $('#dlGo').onclick = async () => {
+    const sid = +$('#dlSurah').value, r = S.settings.reciter, bar = $('#dlBar'), btn = $('#dlGo');
+    if (RECITERS[r].missing?.includes(sid)) { toast(`${RECITERS[r].en} hasn't recorded this surah. Pick another reciter above.`, 4000); return; }
+    btn.disabled = true; bar.hidden = false; bar.firstChild.style.width = '0%';
+    try {
+      await download(r, sid, (f) => { bar.firstChild.style.width = (f * 100).toFixed(0) + '%'; });
+      toast(`${surah(sid).en} is ready offline 🌙`);
+    } catch (e) {
+      toast("Couldn't download it. Check your connection and try again.", 4500);
+    }
+    btn.disabled = false; bar.hidden = true; drawDl();
   };
   $('#exp').onclick = () => {
     const blob = new Blob([JSON.stringify(S, null, 1)], { type: 'application/json' });

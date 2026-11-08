@@ -556,3 +556,8 @@ body[data-view="mushaf"] .timer-btn, body[data-view="settings"] .timer-btn { wid
 .pick-item.on { font-weight: 700; color: var(--accent); }
 .pick-none { padding: 12px; color: var(--soft); text-align: center; }
 .mv-bar .pick-btn { min-width: 140px; }
+.dl-bar { height: 8px; border-radius: 99px; background: var(--line); overflow: hidden; margin: 10px 0 4px; }
+.dl-bar i { display: block; height: 100%; width: 0; background: var(--sage); transition: width .3s; }
+.dl-list { margin-top: 10px; }
+.dl-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 8px 0; border-top: 1px dashed var(--line); }
+.dl-row b { font-family: var(--arabic); font-weight: 600; }
