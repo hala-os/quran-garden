@@ -466,3 +466,17 @@ body[data-view="mushaf"] .timer-btn, body[data-view="settings"] .timer-btn { wid
 .time-card strong { font-family: var(--hand); font-size: 1.45rem; }
 .time-card .big { font-family: var(--serif); font-size: 1.6rem; }
 .time-card p { margin: .2rem 0 0; color: var(--ink2); font-size: .9rem; }
+
+/* ---------- self-test ---------- */
+.test-bar { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; align-items: center; margin: 0 0 8px; }
+.test-bar .seg.small span { padding: 7px 12px; font-size: .85rem; }
+.test-hint { margin: 0 0 8px; }
+.book.testing .ml:not(.shown) .w { color: transparent; background: color-mix(in srgb, var(--paper-edge) 16%, transparent); border-radius: .3em; transition: color .25s, background .25s; }
+.book.testing[data-hint="first"] .ml:not(.shown) .w:first-child { color: inherit; background: none; }
+.book.testing .ml { cursor: pointer; }
+.book.testing .ml.shown .w { animation: reveal .45s ease both; }
+@keyframes reveal { from { opacity: 0; filter: blur(3px); } to { opacity: 1; filter: none; } }
+.book.testing .w.in-range, .book.testing .w.now, .book.testing .w.sel { background: color-mix(in srgb, var(--paper-edge) 16%, transparent); }
+.mushaf-view.testing .mushaf-page { --h: min(calc(100dvh - 248px), calc((100vw - 32px) / 0.6), 940px); }
+.mushaf-view.testing .book.double .mushaf-page { --h: min(calc(100dvh - 248px), calc((100vw - 150px) / 2 / 0.6), 940px); }
+@media (max-width: 480px) { .mv-bar #testBtn .lbl, .mv-bar #markBtn .lbl { display: none; } .test-bar .btn { padding: 8px 12px; font-size: .9rem; } }

@@ -101,6 +101,38 @@ function paintTimer() {
   if (currentView === 'today' && $('#tToday')) { $('#tToday').textContent = fmtMin(timeToday()); $('#tSplit').innerHTML = splitLine(); }
 }
 
+// ---------- self-test: hide the page, recite, reveal line by line ----------
+let testing = false;
+function setTesting(on, quiet) {
+  testing = on;
+  const book = $('#book'); if (!book) return;
+  book.classList.toggle('testing', on);
+  book.dataset.hint = S.settings.testHint === 'none' ? 'none' : 'first';
+  book.querySelectorAll('.ml.shown').forEach(r => r.classList.remove('shown'));
+  $('#testBar').hidden = !on;
+  document.querySelector('.mushaf-view')?.classList.toggle('testing', on);
+  $('#testBtn').setAttribute('aria-pressed', on ? 'true' : 'false');
+  $('#testBtn').classList.toggle('ghost', !on);
+  if (on && !quiet) toast('Self-test: recite, then tap each line to check 🌿');
+}
+function revealNext() {
+  const rows = [...document.querySelectorAll('#book .mushaf-page .ml')].filter(r => r.querySelector('.w'));
+  const r = rows.find(x => !x.classList.contains('shown'));
+  if (r) { r.classList.add('shown'); r.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); }
+  else finishTest();
+}
+function finishTest() {
+  const ps = spreadPages(mushafPage);
+  const body = h(`<div><h3>How did it go?</h3><p class="hint">Rate each page. A strong page waits longer before its next visit.</p><div class="mark-list"></div>
+    <div class="row-btns"><button class="btn ghost" data-a="again">Test again</button><button class="btn ghost" data-a="stop">Stop testing</button></div></div>`);
+  const list = body.querySelector('.mark-list');
+  const redraw = () => { list.innerHTML = ''; ps.forEach(p => list.append(pageMarkEl(p, redraw))); };
+  redraw();
+  body.querySelector('[data-a=again]').onclick = () => { closeSheet(); setTesting(true, true); };
+  body.querySelector('[data-a=stop]').onclick = () => { closeSheet(); setTesting(false); };
+  openSheet(body);
+}
+
 // ---------- quick marking: memorized / reviewed, right from a page ----------
 function openMarkSheet(ps) {
   const body = h(`<div><h3>${ps.length > 1 ? 'These pages' : 'This page'}</h3><div class="mark-list"></div></div>`);
@@ -379,8 +411,18 @@ function viewMushaf() {
       <div class="mv-bar">
         <select id="surahSel" aria-label="Go to surah">${surahOpts}</select>
         <label class="pg"><span>Page</span><input id="pgInput" type="number" min="1" max="604" inputmode="numeric"></label>
-        <button class="btn ghost" id="markBtn">${seedIcon()} Mark</button>
+        <button class="btn ghost" id="testBtn" aria-pressed="false">${testIcon()}<span class="lbl"> Test</span></button>
+        <button class="btn ghost" id="markBtn">${seedIcon()}<span class="lbl"> Mark</span></button>
         <button class="btn" id="loopBtn">${loopIcon()} Loop</button>
+      </div>
+      <div class="test-bar" id="testBar" hidden>
+        <div class="seg small" role="group" aria-label="Hints">
+          <label><input type="radio" name="hint" value="first" ${S.settings.testHint !== 'none' ? 'checked' : ''}><span>First words</span></label>
+          <label><input type="radio" name="hint" value="none" ${S.settings.testHint === 'none' ? 'checked' : ''}><span>No hints</span></label>
+        </div>
+        <button class="btn" id="tNext">Reveal next line</button>
+        <button class="btn ghost" id="tAll">Show all</button>
+        <button class="btn ghost" id="tDone">Done</button>
       </div>
       <div class="book-wrap">
         <button class="turn left" id="turnNext" aria-label="Next page">‹</button>
@@ -393,6 +435,19 @@ function viewMushaf() {
   $('#pgInput').onchange = (e) => goPage(clampPage(+e.target.value));
   $('#loopBtn').onclick = () => openLoopSheet();
   $('#markBtn').onclick = () => openMarkSheet(spreadPages(mushafPage));
+  $('#testBtn').onclick = () => setTesting(!testing);
+  $('#tNext').onclick = revealNext;
+  $('#tAll').onclick = () => { document.querySelectorAll('#book .ml').forEach(r => r.classList.add('shown')); };
+  $('#tDone').onclick = finishTest;
+  document.querySelectorAll('input[name=hint]').forEach(r => r.onchange = () => { S.settings.testHint = r.value; store.save(); $('#book').dataset.hint = r.value; });
+  // while testing, tapping a line reveals it instead of opening the ayah
+  $('#book').addEventListener('click', (e) => {
+    if (!testing) return;
+    const row = e.target.closest('.ml'); if (!row) return;
+    e.stopPropagation();
+    row.classList.add('shown');
+  }, true);
+  setTesting(testing, true);
   $('#turnNext').onclick = () => turn(1);
   $('#turnPrev').onclick = () => turn(-1);
   // swipe: in an Arabic mushaf the next page is on the left, so swipe right to go forward
@@ -445,6 +500,7 @@ async function drawSpread() {
   // Right page first in reading order (RTL): CSS uses row-reverse for the spread.
   await Promise.all(els.map(([p, el]) => renderPage(el, p, { onVerse: (k) => openAyahSheet(k) })));
   refreshHighlights();
+  if (testing) setTesting(true, true);
   // warm the cache for the next pages
   [ps[ps.length - 1] + 1, ps[ps.length - 1] + 2].filter(x => x <= 604).forEach(x => loadPage(x).catch(() => {}));
 }
@@ -776,6 +832,7 @@ function toast(msg, ms = 2600) {
 function playIcon() { return '<svg class="i" viewBox="0 0 24 24"><path d="M8 5.5v13l11-6.5z"/></svg>'; }
 function loopIcon() { return '<svg class="i" viewBox="0 0 24 24"><path d="M17 2l3 3-3 3"/><path d="M4 11V9a4 4 0 0 1 4-4h12M7 22l-3-3 3-3"/><path d="M20 13v2a4 4 0 0 1-4 4H4"/></svg>'; }
 function bookIcon() { return '<svg viewBox="0 0 24 24"><path d="M3 5c3-1 6-1 9 1 3-2 6-2 9-1v14c-3-1-6-1-9 1-3-2-6-2-9-1Z"/><path d="M12 6v14"/></svg>'; }
+function testIcon() { return '<svg class="i" viewBox="0 0 24 24"><path d="M2.5 12s3.5-6.5 9.5-6.5S21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z"/><path d="M4 20 20 4"/></svg>'; }
 function seedIcon() { return '<svg class="i" viewBox="0 0 24 24"><path d="M12 20v-7M12 13c0-4 3-6 7-6 0 4-3 6-7 6ZM12 15c0-3-2-5-6-5 0 3 2 5 6 5Z"/></svg>'; }
 function canSvg(full) {
   return `<svg viewBox="0 0 64 64" aria-hidden="true"><path d="M14 26h30v22a6 6 0 0 1-6 6H20a6 6 0 0 1-6-6Z" class="can-body"/>
