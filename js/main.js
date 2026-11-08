@@ -162,20 +162,26 @@ function setTesting(on, quiet) {
   testing = on;
   const book = $('#book'); if (!book) return;
   book.classList.toggle('testing', on);
-  book.dataset.hint = S.settings.testHint === 'none' ? 'none' : 'first';
-  book.querySelectorAll('.ml.shown').forEach(r => r.classList.remove('shown'));
+  book.dataset.hint = S.settings.testHint === 'none' ? 'none' : 'ayah';
+  book.querySelectorAll('.w.shown').forEach(w => w.classList.remove('shown'));
+  // mark the first word of every ayah, for the memorizing hint
+  let prev = null;
+  book.querySelectorAll('.w').forEach(w => { w.classList.toggle('ayah-first', w.dataset.v !== prev); prev = w.dataset.v; });
   $('#testBar').hidden = !on;
   document.querySelector('.mushaf-view')?.classList.toggle('testing', on);
   $('#testBtn').setAttribute('aria-pressed', on ? 'true' : 'false');
   $('#testBtn').classList.toggle('ghost', !on);
-  if (on && !quiet) toast('Self-test: recite, then tap each line to check 🌿');
+  if (on && !quiet) toast(S.settings.testHint === 'none' ? 'Reviewing: no hints. Recite, then tap a line or use Show next 🌿' : 'Memorizing: each ayah shows its first word. Recite, then tap a line or use Show next 🌿', 4000);
 }
-function revealNext() {
-  const rows = [...document.querySelectorAll('#book .mushaf-page .ml')].filter(r => r.querySelector('.w'));
-  const r = rows.find(x => !x.classList.contains('shown'));
-  if (r) { r.classList.add('shown'); r.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); }
-  else finishTest();
+function revealNext(kind = 'line') {
+  const words = [...document.querySelectorAll('#book .mushaf-page .w')];
+  const w = words.find(x => !x.classList.contains('shown') && !(testHintOn() && x.classList.contains('ayah-first')));
+  if (!w) { finishTest(); return; }
+  const group = kind === 'word' ? [w] : kind === 'line' ? [...w.closest('.ml').querySelectorAll('.w')] : words.filter(x => x.dataset.v === w.dataset.v);
+  group.forEach(x => x.classList.add('shown'));
+  w.closest('.ml').scrollIntoView({ block: 'nearest', behavior: 'smooth' });
 }
+const testHintOn = () => $('#book')?.dataset.hint === 'ayah';
 function finishTest() {
   const ps = spreadPages(mushafPage);
   const body = h(`<div><h3>How did it go?</h3><p class="hint">Rate each page. A strong page waits longer before its next visit.</p><div class="mark-list"></div>
@@ -482,10 +488,14 @@ function viewMushaf() {
       </div>
       <div class="test-bar" id="testBar" hidden>
         <div class="seg small" role="group" aria-label="Hints">
-          <label><input type="radio" name="hint" value="first" ${S.settings.testHint !== 'none' ? 'checked' : ''}><span>First words</span></label>
-          <label><input type="radio" name="hint" value="none" ${S.settings.testHint === 'none' ? 'checked' : ''}><span>No hints</span></label>
+          <label><input type="radio" name="hint" value="ayah" ${S.settings.testHint !== 'none' ? 'checked' : ''}><span title="Shows the first word of each ayah">Memorizing</span></label>
+          <label><input type="radio" name="hint" value="none" ${S.settings.testHint === 'none' ? 'checked' : ''}><span title="No hints">Reviewing</span></label>
         </div>
-        <button class="btn" id="tNext">Reveal next line</button>
+        <div class="reveal-btns"><span class="soft small">Show next</span>
+          <button class="btn" data-next="word">Word</button>
+          <button class="btn" data-next="line">Line</button>
+          <button class="btn" data-next="ayah">Ayah</button>
+        </div>
         <button class="btn ghost" id="tAll">Show all</button>
         <button class="btn ghost" id="tDone">Done</button>
       </div>
@@ -501,16 +511,16 @@ function viewMushaf() {
   $('#loopBtn').onclick = () => openLoopSheet();
   $('#markBtn').onclick = () => openMarkSheet(spreadPages(mushafPage));
   $('#testBtn').onclick = () => setTesting(!testing);
-  $('#tNext').onclick = revealNext;
-  $('#tAll').onclick = () => { document.querySelectorAll('#book .ml').forEach(r => r.classList.add('shown')); };
+  document.querySelectorAll('[data-next]').forEach(b => b.onclick = () => revealNext(b.dataset.next));
+  $('#tAll').onclick = () => { document.querySelectorAll('#book .w').forEach(w => w.classList.add('shown')); };
   $('#tDone').onclick = finishTest;
-  document.querySelectorAll('input[name=hint]').forEach(r => r.onchange = () => { S.settings.testHint = r.value; store.save(); $('#book').dataset.hint = r.value; });
+  document.querySelectorAll('input[name=hint]').forEach(r => r.onchange = () => { S.settings.testHint = r.value; store.save(); $('#book').dataset.hint = r.value; toast(r.value === 'none' ? 'Reviewing: no hints' : 'Memorizing: first word of each ayah'); });
   // while testing, tapping a line reveals it instead of opening the ayah
   $('#book').addEventListener('click', (e) => {
     if (!testing) return;
     const row = e.target.closest('.ml'); if (!row) return;
     e.stopPropagation();
-    row.classList.add('shown');
+    row.querySelectorAll('.w').forEach(w => w.classList.add('shown'));
   }, true);
   setTesting(testing, true);
   $('#turnNext').onclick = () => turn(1);
